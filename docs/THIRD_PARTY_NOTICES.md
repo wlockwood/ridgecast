@@ -2,6 +2,14 @@
 
 RidgeCast depends on third-party Rust crates whose exact versions are recorded in `Cargo.lock`. Their source distributions contain their respective license terms.
 
+## Unicode grapheme-break test data
+
+`tests/fixtures/shortname/GraphemeBreakTest-17.0.0.txt` (SHA-256 `e2d134d2c52919bace503ebb6a551c1855fe1a1faec18478c78fff254a1793ec`) and `GraphemeBreakTest-18.0.0.txt` (SHA-256 `b0cf047ee94485bbdc846de2b902f5f8a815f6b674f9d04223cddadd91c9df31`) are unmodified Unicode Character Database files, retrieved on 2026-10-04. They are used only by the test suite and are not compiled into the application. They are © Unicode, Inc. and distributed under the [Unicode License v3](https://www.unicode.org/license.txt); see also the [Unicode terms of use](https://www.unicode.org/terms_of_use.html).
+
+## USPS abbreviation conventions
+
+The shortname dictionaries in `src/shortname/dictionaries/` restate factual word-to-abbreviation pairs from [USPS Publication 28](https://pe.usps.com/text/pub28/), Appendix B (state, possession and directional codes) and Appendix C1 (street suffixes), in label capitalization. No USPS text or table layout is reproduced. The selection and its review status are recorded in `src/shortname/dictionaries/sources.json`.
+
 ## Natural Earth water polygons
 
 `resources/water/natural-earth-water.bin.gz` is derived from Natural Earth's

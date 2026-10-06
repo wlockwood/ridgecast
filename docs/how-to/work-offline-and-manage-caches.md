@@ -53,7 +53,7 @@ LiDAR, population, or calculated-result caches. Run the specific links,
 coverage, and data loads you will need while online, then verify them after
 switching offline.
 
-1. While online, open **Map Settings → Prepare Offline Area**.
+1. While online, open **Layers → Data preparation → Prepare Offline Area**.
    Enter the west, east, south, and north coordinates in decimal degrees, or
    choose **Use Visible Map** to copy the current map extent. You can edit the
    coordinates afterward; panning the map does not change the selected region.

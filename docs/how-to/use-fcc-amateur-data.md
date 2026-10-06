@@ -8,7 +8,7 @@ locally. To place nearby records on the map, it can send batches derived from
 nearby licensee mailing addresses to the U.S. Census geocoder. Do not enable
 that step for an area whose location or address data you cannot disclose.
 
-1. In Map Settings, enable **Amateur licenses**. If the local FCC catalog is empty,
+1. In the map’s **Layers** drawer, enable **Amateur licenses**. If the local FCC catalog is empty,
    RidgeCast downloads it in the background and shows its progress below the
    checkbox. If the download fails, open **Config** to see the error and retry.
 2. Select **Config** to refresh the FCC ULS amateur catalog later or import local
@@ -32,7 +32,7 @@ coverage endpoint.
 
 ### Ham colors modes
 
-The side panel offers three coloring modes for amateur markers:
+**Layers → Amateur Options → Ham colors** offers three coloring modes for amateur markers:
 
 - **License class**: Colors individual licenses by FCC operator class: Technician
   (blue), General (green), Amateur Extra (purple), Advanced (orange), Novice

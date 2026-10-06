@@ -18,8 +18,9 @@ Started** opens the first-network tutorial; **Help → Glossary** explains terms
 
 Start here if this is your first time using the application.
 
-- [Visual tour](visual-tour.md) — see the desktop map, coverage color settings,
-  and radio system profiles in a synthetic demonstration.
+- [Visual tour](visual-tour.md) — see the revamped planning workspace, Layers
+  drawer, site editor, coverage color settings, and radio profiles in a
+  synthetic demonstration.
 - [Plan your first network](tutorials/plan-your-first-network.md) — use the
   supplied sample to inspect a radio path, map predicted coverage, and check
   whether sites can reach a designated network center. Start here even if you
@@ -56,6 +57,7 @@ Use these pages while working in the application.
 - [Display units](reference/display-units.md)
 - [Nodes and systems](reference/nodes-and-systems.md)
 - [Map views](reference/map-views.md)
+- [Shortnames](reference/shortnames.md)
 - [Propagation settings](reference/propagation-settings.md)
 - [Optional scientific CPU models](reference/scientific-models.md)
 - [Co-channel interference scenarios](reference/interference-scenarios.md)

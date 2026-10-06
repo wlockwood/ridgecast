@@ -17,6 +17,13 @@ Open **Calculation Progress**. Terrain, land cover, and optional LiDAR may need
 to finish before propagation can run. The current phase distinguishes downloads
 from profile preparation and solving.
 
+A run whose LiDAR is already cached still has work to do before it can solve:
+**Building surfaces** crops a surface model out of those cached tiles, one per
+site or link corridor. The status bar counts the crops as they complete, and the
+overall bar stays near zero until solving starts, because the bar tracks solved
+links rather than preparation. On a network with many thousands of cached tiles
+this step can run for several minutes.
+
 ## Coverage or Site Finder takes too long
 
 Reduce the visible area or range, then choose a coarser resolution. Confirm the

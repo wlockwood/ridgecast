@@ -18,13 +18,18 @@ planning who are ready to learn the terminology in the tutorial and glossary.
 The project is under active development and has not reached a stable 1.0 file
 format or modeling API.
 
-![RidgeCast network view with six demo sites, directional links, coverage controls, and the node list](screenshots/overview.png)
+![RidgeCast planning workspace with selected-site details in Network on the left, six synthetic sites on the map, and Coverage on the right](screenshots/planning-workspace.png)
 
 Synthetic example with illustrative saved link values. See the
-[visual tour](visual-tour.md) for the node, radio-profile, and fade-margin
-controls.
+[visual tour](visual-tour.md) for the workspace, Layers drawer, site editor,
+radio profiles, and fade-margin controls.
 
 ## Highlights
+
+- Keep sites and details in the left Network navigator, coverage assumptions and
+  results in the right Coverage workbench, and map styling in a pinnable Layers
+  drawer. See [planning workspace controls](reference/controls-and-shortcuts.md#planning-workspace).
+  Floating dialogs fit their contents before scrolling; their width stays adjustable.
 
 - Register checked WGS84 bare-earth DEMs, aligned DSM/DTM surveys, and bounded
   ESA WorldCover categorical crops; prepare an explicit offline calculation task
@@ -44,6 +49,7 @@ controls.
 - Choose metric or US customary display units; planning controls show the
   equivalent in parentheses. See [Display units](reference/display-units.md).
 - Evaluate directional links with terrain profiles, Fresnel clearance,
+  persistent network results that reuse unchanged terrain/LiDAR evaluations,
   automated antenna height solving (to achieve ≥60% Fresnel clearance or a
   target fade margin), Longley–Rice/ITM or P.1812-inspired terrain-diffraction
   path loss, link budgets, modeled noise floors, and optional measured LiDAR

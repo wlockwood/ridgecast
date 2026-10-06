@@ -3,7 +3,7 @@
 Coverage evaluates a configured **Test Node** at cells around one or more
 selected radio nodes. The Test Node is the hypothetical radio at the far end of
 each map cell; configure its power, receiver sensitivity, antenna, height, and
-loss in Map Settings. Signal-quality thresholds come from **Settings → Fade
+system loss under **Coverage → Edit test radio**. Signal-quality thresholds come from **Settings → Fade
 Margin Settings**. A fade margin is measured in dB; a larger value means more
 modeled headroom above the effective noise floor.
 
@@ -37,7 +37,7 @@ hex exactly at Marginal still counts as Poor when smoothing makes it orange.
 
 ## Visual settings
 
-The coverage panel's **Blur Radius (Heatmap)** slider ranges from **0 to 20**,
+Under **Layers → Coverage appearance**, **Blur Radius (Heatmap)** ranges from **0 to 20**,
 and **Min Cluster Size** ranges from **1 to 20**. Both default to **1**.
 Blur Radius averages fade margins over existing neighboring hexes within the
 selected number of steps, then colors each hex from that averaged margin using
@@ -71,6 +71,9 @@ the cell count approximately with area.
 
 ## Algorithms
 
+Open **Coverage → Calculation options** for exact hex spacing, algorithm,
+and Radial Sweep angular step.
+
 | Algorithm | Behavior |
 | --- | --- |
 | **Vertex Grid** | Evaluates a hexagonal grid for continuous output. |
@@ -80,9 +83,9 @@ the cell count approximately with area.
 
 | Direction | Question answered |
 | --- | --- |
-| **TX Coverage** | `selected node → Test Node`: where can the selected node or nodes be heard? |
-| **RX Coverage** | `Test Node → selected node`: from where can the selected node or nodes hear the Test Node? |
-| **Two-way Coverage** | Both directions must qualify through the same serving site. Each site's margin is its lower TX/RX margin; the best qualifying site wins. |
+| **TX** | `selected node → Test Node`: where can the selected node or nodes be heard? |
+| **RX** | `Test Node → selected node`: from where can the selected node or nodes hear the Test Node? |
+| **Two-way** | Both directions must qualify through the same serving site. Each site's margin is its lower TX/RX margin; the best qualifying site wins. |
 
 TX and RX results differ when power, antenna gain, height, or receiver noise is
 asymmetric.
@@ -99,22 +102,25 @@ margin. The job publishes completion only after both directional runs finish.
 
 | Mode | Availability | Meaning |
 | --- | --- | --- |
-| **Normal Coverage / Max Fade Margin** | One or more nodes | Each cell shows the strongest fade margin from any evaluated node. |
-| **Best Unit** | Multiple nodes | Each cell is colored by its strongest serving node. Retains per-node serving margins. |
-| **Redundancy** | Multiple nodes | Each cell is colored by how many evaluated nodes qualify. Retains per-node serving margins. |
-| **Unique Coverage** | One node | Evaluates that node against the rest of the enabled, visible radio network, then shows its exclusive cells. Retains per-node serving margins for the evaluated nodes. |
+| **Strongest signal / fade margin** | One or more nodes | Each cell shows the strongest fade margin from any evaluated node. |
+| **Best serving site** | Multiple nodes | Each cell is colored by its strongest serving node. Retains per-node serving margins. |
+| **Coverage redundancy** | Multiple nodes | Each cell is colored by how many evaluated nodes qualify. Retains per-node serving margins. |
+| **Unique contribution of one site** | One node | Evaluates that node against the rest of the enabled, visible radio network, then shows its exclusive cells. Retains per-node serving margins for the evaluated nodes. |
 
 The **Best Unit threshold** (default 10 dB) is an absolute minimum fade margin
 for these three modes, not the difference between a winner and runner-up. The
 Marginal threshold also affects visible and counted coverage.
 
-With one selected node the desktop offers **Normal Coverage** and **Unique
-Coverage**. Use Normal Coverage for that site's total map; its whole-image export
-stats card can show area and loaded WorldPop population. Normal Coverage does
+The **Coverage question** menu always shows all four choices. Best serving site
+and redundancy require at least two eligible sites, including selected amateur
+locations. Unique contribution requires exactly one selected network radio and
+no selected amateur locations; unavailable choices explain their requirements.
+Use **Strongest signal / fade margin** (Max Fade Margin) for that site's total map;
+its whole-image export stats card can show area and loaded WorldPop population. It does
 not retain the serving margins needed for per-site captions or coverage-weighted
 network analysis. Unique Coverage answers a different question—what that site
 alone contributes—and evaluates other network nodes as comparisons. For the
-usual network service analysis, select multiple sites and use Best Unit.
+usual network service analysis, select multiple sites and choose **Best serving site** (Best Unit).
 
 Coverage is cached persistently per node. Adding a node to a selection normally
 calculates only that node; removing a node normally calculates nothing. Changing

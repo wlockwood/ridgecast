@@ -67,18 +67,16 @@ margins when the radios, antennas, or noise floors differ.
 ## 3. Draw coverage
 
 1. Click empty map space to clear the selection, then select one radio node.
-2. In the right-hand settings panel, expand **Global Coverage Settings** if
-   needed and choose the **Draft** preset.
-3. Leave the algorithm at **Vertex Grid**, the direction at **TX Coverage**, and
-   the display mode at **Normal Coverage**. The default **Test Node** represents
+2. In the right-hand settings panel, open **Coverage** and choose the **Draft** preset.
+3. Leave the algorithm at **Vertex Grid**, the direction at **TX**, and
+   the display mode at **Strongest signal / fade margin**. The default **Test Node** represents
    a low-power handheld: this TX map asks where that hypothetical handheld can
-   hear the selected site. For a different receiver, change **Global Coverage
-   Settings → Test Node Parameters** before judging the result.
+   hear the selected site. For a different receiver, change **Coverage → Edit test radio** before judging the result.
 4. Wait for the coverage overlay to appear.
 
 You should see colored cells around the selected site. If none appear, check
 **Calculation Progress** for unfinished or failed work, then check the selected
-node, coverage range, and **Test Node Parameters** in the right-hand panel.
+node, coverage range, and **Edit test radio** in the right-hand panel.
 The completion summary
 reports the elapsed time and number of evaluated cells. Selecting the same node
 again with unchanged settings should reuse its persistent coverage cache.

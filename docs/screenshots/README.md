@@ -1,14 +1,23 @@
 # RidgeCast screenshot checklist
 
-**Status:** Three actual desktop captures are included in
-[the visual tour](../visual-tour.md): the network overview, Fade Margin
-Settings, and Radio Systems Manager. Unchecked items below are future gallery
-suggestions, not existing illustrations.
+**Status:** Five actual desktop captures, refreshed October 4, 2026, are
+included in [the visual tour](../visual-tour.md): the planning workspace,
+pinned Layers drawer, site editor, Fade Margin Settings, and Radio Systems
+Manager. Unchecked items below are future gallery suggestions, not existing
+illustrations.
+
+The network overview now uses `planning-workspace.png`, a native capture of the
+Network/Coverage workspace with the drawer closed so the map has more space.
+`map/layers-pinned.png` shows the same workspace with Layers pinned.
+`overview.png` retains the earlier sidebar layout for historical reference;
+use `planning-workspace.png` for current documentation.
 
 The included captures use one synthetic six-site demonstration network with
 illustrative saved link values, offline mode, and a plain basemap. They contain
-no personal network data or amateur-license records. The images show the real
-interface; their link colors do not validate an RF prediction.
+no personal network data, amateur-license records, or calculated coverage
+overlay. The images show the real interface with isolated configuration;
+their link colors do not validate an RF prediction. All five are 1440 × 900
+lossless PNGs in the dark theme.
 
 The root README should open with one strong overview image and a short visual tour. A detailed gallery can show every mode and tool without making the project landing page slow or difficult to scan.
 
@@ -27,13 +36,15 @@ The root README should open with one strong overview image and a short visual to
 
 These images tell the story without requiring the reader to open the full gallery:
 
-- [x] `overview.png` — normal network view with the side panel and illustrative directed links
+- [x] `planning-workspace.png` — Network and Coverage around the map with illustrative directional links
 - [ ] `coverage.png` — selected nodes with a representative coverage result
 - [ ] `link-profile.png` — terrain, Fresnel clearance, land cover, and link-budget details
 - [ ] `site-finder.png` — completed Site Finder overlay and ranked results
 - [ ] `amateur-radio.png` — filtered amateur markers, a co-located group, and candidate links
 
-Use `overview.png` as the hero image near the top of the root README. The remaining four work well as a two-column visual tour. Link that tour to a detailed `docs/visual-tour.md` gallery.
+Use `planning-workspace.png` as the hero image near the top of the root README.
+Link to `docs/visual-tour.md` for the current gallery. Add the four suggested
+workflow images above when representative captures are available.
 
 ## Detailed mode gallery
 
@@ -57,6 +68,7 @@ Use `overview.png` as the hero image near the top of the root README. The remain
 
 ### Map and data overlays
 
+- [x] `map/layers-pinned.png` — the Layers drawer pinned beside the map
 - [ ] `map/basemaps.png` — compare None, Road, Topographic, and Satellite in one image
 - [ ] `map/terrain-normal.png`
 - [ ] `map/terrain-multiply.png`
@@ -70,7 +82,7 @@ The six terrain draw styles can be presented as one labeled comparison rather th
 ### Tools and dialogs
 
 - [ ] `tools/add-node.png`
-- [ ] `tools/node-editor.png`
+- [x] `tools/node-editor.png`
 - [x] `tools/systems-manager.png`
 - [ ] `tools/link-details.png`
 - [ ] `tools/link-profile.png`

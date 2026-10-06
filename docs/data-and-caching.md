@@ -344,10 +344,11 @@ population is deliberately exempt.
 | **LiDAR surfaces** | derived DSM/DTM products and resolved catalogs | 16 GB |
 | **Point clouds** | raw LiDAR tiles exactly as served | 16 GB |
 | **Coverage** | completed per-node coverage grids | 1 GB |
+| **Links** | completed network link results | 256 MB |
 | **Population** | WorldPop country rasters | **none — never evicted** |
 
-**Allow at least 59 GB for the default budgets.** The six capped categories
-sum to 59 GB, and population is unbounded on top of that. There is no overall
+**Allow at least 59.25 GB for the default budgets.** The seven capped categories
+sum to 59.25 GB, and population is unbounded on top of that. There is no overall
 total cap: RidgeCast enforces caps per category only, so the categories are the
 budget. Add whatever population rasters your area of interest needs — 300–900 MB
 per country — and leave headroom, because a category is trimmed *back* to its cap
@@ -452,8 +453,10 @@ pause, cancel, retry, and the offline toggle.
 Two things about it are more useful than they sound:
 
 - **Each entry names what asked for it**, by node name — a specific node's
-  coverage, or the corridor between two named nodes. A download is never an
-  anonymous URL.
+  coverage, a node's radial proximity blob, or the corridor between two named nodes.
+  LiDAR downloads explicitly distinguish whether point-cloud data was requested for
+  a narrow **link corridor** (e.g. evaluating a link between two nodes) versus a 360°
+  **proximity blob** (evaluating clutter around a node for coverage calculations).
 - **Show on map** centers and zooms on the thing that caused it: the two ends of
   a link corridor, every link of a node, or the downloaded tile itself, with the
   downloaded area outlined until you click elsewhere.

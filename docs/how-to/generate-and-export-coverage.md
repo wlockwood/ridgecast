@@ -5,7 +5,7 @@ for use in GIS software.
 
 Coverage asks how a configured hypothetical far-end radio—the **Test Node**—would
 fare around each selected site. Set its radio and antenna parameters under
-**Test Node Parameters** inside **Global Coverage Settings** in the right-hand
+**Edit test radio** inside **Coverage** in the right-hand
 settings panel before calculating;
 use **TX** when the selected site transmits to that radio, and **RX** for the
 reverse direction.
@@ -15,17 +15,19 @@ reverse direction.
 1. Select the radio nodes to evaluate. Use **Ctrl+A** to select all nodes;
    an empty selection clears the displayed coverage. Changing the selection
    starts or updates the background calculation automatically.
-2. In the right-hand settings panel, open **Global Coverage Settings** and set
+2. In the right-hand settings panel, open **Coverage** and set
    the coverage range for the area you actually need, then begin with **Draft**.
    The range is the radius evaluated
    around each selected node; start small and enlarge it only when needed.
-3. Choose **Vertex Grid** for continuous output or **Radial Sweep** for a faster
+3. Under **Calculation options**, choose **Vertex Grid** for continuous output or **Radial Sweep** for a faster
    exploratory result.
-4. Choose **TX Coverage** (`selected node → Test Node`) to show where the
-   selected nodes can be heard, or **RX Coverage** (`Test Node → selected node`)
+4. Choose **TX** (`selected node → Test Node`) to show where the
+   selected nodes can be heard, or **RX** (`Test Node → selected node`)
    to show where they can hear the configured Test Node.
-5. For multiple nodes, choose the merge mode that answers your question:
-   **Max Fade Margin**, **Best Unit**, or **Redundancy**.
+5. Use **Coverage question** to choose **Strongest signal / fade margin**,
+   **Best serving site**, or **Coverage redundancy** for multiple sites.
+   **Unique contribution of one site** compares one selected network radio with
+   the rest of the network. Unavailable choices explain their selection requirements.
 6. Watch **Calculation Progress** until its completion summary appears, then
    reduce the cell size or angular step only if the draft covers the intended
    area. Smaller cell sizes are finer map spacing; smaller angular steps add
@@ -105,7 +107,7 @@ rasterization, statistics, and encoding. Existing image destinations remain
 intact. Closing the dialog keeps the job running; reopening shows its progress
 and result. Canceled jobs do not copy a newly rendered image to the clipboard.
 
-1. Position and zoom the map to the desired geographic viewport. Use **Fit to Evaluation Range** (in the export dialog, in **Global Coverage Settings**, or under **View**) to zoom and pan the viewport to exactly fit the evaluation range of coverage nodes. Use **Fit to Visible Coverage** to zoom and pan the view to exactly fit all visible hexels of coverage according to the fade margin settings.
+1. Position and zoom the map to the desired geographic viewport. Use **Fit to Evaluation Range** (in the export dialog, in the map’s **Fit** menu, or under **View**) to zoom and pan the viewport to exactly fit the evaluation range of coverage nodes. Use **Fit to Visible Coverage** to zoom and pan the view to exactly fit all visible hexels of coverage according to the fade margin settings.
 2. Choose **File → Export → Coverage Image…**.
 3. Select an output resolution multiplier (**1x**, **2x**, **4x**, or **8x**).
 4. Optionally toggle **Show links** to draw calculated directional network links
@@ -256,8 +258,7 @@ for that ground.
    transmitter's configured height reference; its other radio settings and
    coverage range stay the same. The study uses TX Coverage from the chosen
    transmitter to the configured Test Node, regardless of the current map
-   direction. Set the Test Node under **Global Coverage Settings → Test Node
-   Parameters** in the right-hand panel before running the study. The dialog
+   direction. Set the Test Node under **Coverage → Edit test radio** in the right-hand panel before running the study. The dialog
    shows the active Test Node and SNR threshold; the result retains the values
    used at calculation time.
 3. Choose **Height impact map** and click **Calculate**. Green cells gain

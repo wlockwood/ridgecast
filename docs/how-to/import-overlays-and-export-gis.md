@@ -12,7 +12,7 @@ general CRS detector. A wrong or mixed CRS may import in the wrong place.
 
 1. Choose **File → Import → Vector Overlays (KML, GeoJSON, GPX)…**.
 2. Select one or more KML, KMZ, GeoJSON, or GPX files.
-3. Open the **Vector Layers** section of Map Settings.
+3. Open the **Vector Layers** section of the **Layers** drawer.
 4. Confirm the layer appears at the expected location on the map, then set
    visibility, stroke color, stroke width, and fill color. If placement is
    wrong, reproject the source in your GIS and import it again.

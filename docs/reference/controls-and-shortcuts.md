@@ -1,5 +1,56 @@
 # Controls and shortcuts
 
+## Planning workspace
+
+**Network** on the left keeps the site list above selected-site details and
+directional viable links. Choose an explicit sort order, Ctrl-click to select
+several sites, double-click a list row to center the map, or right-click a row
+for its actions. **Edit selected…** supports single-site and bulk editing.
+The list and details scroll separately.
+
+**Coverage** on the right shows the eligible selected-site count, TX/RX/two-way
+direction, and the hypothetical test radio used at every map cell. Expand
+**Edit test radio** to adjust power, sensitivity, gain, height, or system loss.
+**Coverage question** chooses strongest fade margin, best serving site,
+redundancy, or one site's unique contribution. Multi-site comparisons require
+two eligible sites; Unique requires exactly one selected network radio and no
+amateur-license locations. Unavailable choices explain those requirements.
+Hidden, disabled, and marker nodes do not inflate the eligible-site count.
+
+Use **Draft**, **Planning**, or **Detailed**, then set **Default radius** and
+check the workload/time estimate. **Calculation options** contains exact hex
+spacing, the algorithm, an angular-step control for Radial Sweep, and
+**Reset all N range overrides**, which applies to the entire network.
+Population and calculation results follow the inputs. Coverage scrolls
+independently from Network.
+
+Open **Layers** on the map for basemap, coverage appearance (blur, small-cluster
+filtering, patterns, blend, opacity), terrain, land cover, amateur locations,
+vector layers, and available cached DSM display. **Pin** reserves space beside
+the map; **Unpin** floats the drawer; **Close** gives the space back. Visibility
+and pinning are remembered. A pinned drawer floats temporarily on smaller
+windows to preserve map space, then returns when the window is widened.
+The floating drawer grows and shrinks as sections open and close. Drag its
+side edges to adjust its width; scrolling begins only when its contents exceed
+the available window height.
+
+**Layers → Data preparation** remains available with overlays hidden. It
+contains **Terrain & Geodata Settings…**, visible-area terrain/land-cover
+downloads, and **Prepare Offline Area…**. Provider selection and terrain source
+resolution belong in Terrain & Geodata Settings, separate from display style.
+Use the map's **Fit** menu to fit nodes, evaluation range, or visible coverage;
+the same commands remain in **View**.
+
+## Floating windows
+
+Floating windows grow and shrink vertically as sections open, results appear,
+or controls are hidden. Drag their side edges to adjust width. Scrolling begins
+when the contents exceed the available application-window height. Dialogs with
+bottom action rows keep those actions visible while their bodies scroll;
+exceptionally short windows allow the whole dialog to scroll so actions remain
+reachable. Plots, horizontal tables, and compact dropdown menus retain their
+own viewports.
+
 ## Map controls
 
 | Action | Control |
@@ -111,9 +162,11 @@ by cached NLCD land-cover classes where available. No extra downloads are needed
 
 Transparency uses water classification, not an elevation threshold: land below
 sea level remains visible, and lakes above sea level are transparent. Elevations
-used for links, coverage, and terrain profiles stay unchanged. Contours use
-narrow elevation bands on varying terrain, preserving shading between levels
-on steep slopes. A flat surface at a contour level is not filled black.
+used for links, coverage, and terrain profiles stay unchanged. Contour lines
+are drawn about 1.5 pixels wide whatever the slope, so gentle valley floors get
+a thin line rather than a wide black band, and level ground has no line. When an
+interval's lines would sit only a few pixels apart on steep ground, that
+interval fades out; enable a wider interval (such as 100 m) to keep lines there.
 
 The global mask uses [Natural Earth's 1:10 million polygons](https://www.naturalearthdata.com/downloads/10m-physical-vectors/).
 Its shorelines are generalized; small ponds, narrow rivers, and tiny islands may

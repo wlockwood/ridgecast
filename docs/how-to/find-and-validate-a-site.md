@@ -7,7 +7,7 @@ and ranks **which locations would make the best radio sites**.
 Use the scan to shortlist locations, then validate them with your actual radio
 settings. A high rank does not establish that your planned system will work.
 Area scans have their own transmitter and reference receiver settings; changing
-**Test Node Parameters** does not change them. Configure the scan under
+**Edit test radio** does not change them. Configure the scan under
 **Candidate transmitter and reference receiver**. The defaults are listed under [Radio assumptions and
 range](#radio-assumptions-and-range). Results sample rays rather than every
 point in the area, so finer candidate cells do not remove gaps between rays.
@@ -27,12 +27,11 @@ point in the area, so finer candidate cells do not remove gaps between rays.
    - **🔬 Deep Ridge Hunt** (30 m resolution, 2 recursions): Finer candidate placement on ridges and peaks, with aggressive suppression; its radio rays remain sparsely sampled at long range.
 4. **Set shared inputs:** Enter your operating frequency in MHz (for example,
    146 for 146 MHz) under **Settings → Network Frequency…**
-   and the evaluation distance under **Global Coverage Settings → Node Coverage
-   Radius (km)** in the side panel. Choose the distance to the farthest area you
+   and the evaluation distance under **Coverage → Default radius** in the right-hand workbench. Choose the distance to the farthest area you
    want each candidate to serve, in every direction. Choose the scan's radios
    under **Candidate transmitter and reference receiver**. The legacy preset
    uses a 30 dBm, 5 dBi transmitter at 10 m and a receiver at 2 m;
-   **Test Node Parameters** does not replace these radios. See
+   **Edit test radio** does not replace these radios. See
    [Radio assumptions and range](#radio-assumptions-and-range) for losses and noise.
 5. **Start the scan:** Use **Start CPU Scan** if unsure which button to choose.
    It uses the model selected under **Settings → Application Preferences → Propagation**. For faster
@@ -122,7 +121,7 @@ relative to an ideal antenna radiating equally in all directions, and dB loss
 is subtracted from the signal budget. The noise floor is the assumed background
 level against which the received signal is compared.
 
-Editing coverage's **Test Node Parameters** does not change the scan's separate
+Editing coverage's **Edit test radio** does not change the scan's separate
 radio settings. The scan also uses network frequency,
 global coverage range, and signal-band thresholds. Configure your actual radio
 and antenna settings when validating a placed node.

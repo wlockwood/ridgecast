@@ -7,7 +7,7 @@ exists outside the area it searches.
 1. Load NLCD land-cover tiles for the area. The search only considers repeater
    sites in loaded tiles with a recognized class. [Prepare an area for offline
    work](work-offline-and-manage-caches.md) if needed.
-   Use **Map Settings → Prepare Offline Area → Check Availability** for the
+   Use **Layers → Data preparation → Prepare Offline Area → Check Availability** for the
    corridor's bounds; download missing land-cover tiles and recheck before
    searching. A missing-data result means the candidate ground was unavailable,
    not that the radio budget failed.

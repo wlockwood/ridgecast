@@ -17,13 +17,12 @@ The short version, before any of the theory:
    below.
 2. **Select the nodes** you want coverage for — click one on the map,
    Control-click to add more.
-3. In **Global Coverage Settings** in the right-hand panel, set the **coverage
-   direction** (TX or RX, §4), the **merge mode** (§6), and check the **Test Node
-   Parameters** (§3) —
+3. In **Coverage** in the right-hand panel, set the **coverage
+   direction** (TX or RX, §4), the **Coverage question** (§6), and check the **Edit test radio** (§3) —
    the imaginary radio at the far end, which sets the scale of the whole map.
-4. In **Global Coverage Settings**, pick the **⚡ Draft** preset for a first pass.
-   The pre-flight gauge tells you whether the run is Fast, Moderate, or Heavy
-   before you commit.
+4. In **Coverage**, pick the **⚡ Draft** preset for a first pass.
+   The pre-flight estimate shows the cell count and an approximate calculation
+   time before you commit.
 5. Selection and coverage-setting changes start or update the calculation
    automatically; there is no separate Run button. Watch each node's badge for
    downloading or calculating.
@@ -94,9 +93,8 @@ margin](link-budget-and-noise.md)**.
 ## 3. The Test Node
 
 RidgeCast's answer is the **Test Node** — a hypothetical station representing
-"the thing you are trying to reach". Its parameters live in a collapsing **Test
-Node Parameters** section of **Global Coverage Settings** in the right-hand
-settings panel, and they default to a
+"the thing you are trying to reach". Its assumptions are visible in the right-hand **Coverage** workbench.
+Expand **Edit test radio** to change them. They default to a
 handheld:
 
 | Parameter | Default | In plain terms |
@@ -120,9 +118,9 @@ is not part of your network and never appears as a node.
 
 Because links are asymmetric, "coverage" is two different maps.
 
-- **TX Coverage** — where the selected nodes can be *heard*. The node transmits;
+- **TX** — where the selected nodes can be *heard*. The node transmits;
   the Test Node receives.
-- **RX Coverage** — where the selected nodes can *hear*. The Test Node transmits;
+- **RX** — where the selected nodes can *hear*. The Test Node transmits;
   the node receives.
 
 These differ whenever power or antenna gain is asymmetric, which is most real
@@ -196,10 +194,11 @@ Margin** does not retain it, so those results can be *unavailable* rather than
 zero. The whole-image export stats card can still report area and, with loaded
 WorldPop data, population in any mode.
 
-For a multi-node service analysis, start with **Best Unit**. The desktop offers
-Best Unit and Redundancy when multiple nodes are selected. With one selected
-node it offers **Normal Coverage** (the same calculation as Max Fade Margin)
-and **Unique Coverage**. Unique Coverage compares that site with the rest of the
+For a multi-node service analysis, choose **Best serving site** in **Coverage
+question**. Best serving site and Coverage redundancy require multiple eligible
+selected sites. With exactly one selected network radio and no amateur
+locations, **Unique contribution of one site** becomes available. Strongest
+signal / fade margin is always available (the Max Fade Margin calculation). Unique Coverage compares that site with the rest of the
 network; it is not a substitute for that site's total coverage.
 
 A separate **Best Unit threshold** (default 10 dB) is the minimum absolute fade
@@ -247,7 +246,7 @@ Anything that changes what was computed:
   aimed, and if aimed, at what bearing and with what front-to-back ratio.
 - The network frequency.
 - The **coverage range** — how far out from each node to evaluate, set globally as
-  **Node Coverage Radius (km)** (0.1–500 km) or overridden per node — and the
+  **Coverage → Default radius** (0.1–500 km) or overridden per node — and the
   coverage and angular resolutions.
 - The algorithm (Vertex Grid / Radial Sweep) or the direction (TX / RX).
 - The Test Node's parameters.
@@ -317,7 +316,7 @@ Runtime scales with **area × resolution⁻²**. Halving the cell size quadruple
 cells; doubling the range quadruples the area. Both at once is a factor of
 sixteen. This is the single most common reason a RidgeCast run appears to hang.
 
-Global Coverage Settings therefore offers three intent presets:
+Coverage therefore offers three intent presets:
 
 | Preset | Resolution | Angular resolution |
 | --- | --- | --- |

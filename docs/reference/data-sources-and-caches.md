@@ -131,6 +131,9 @@ Reuse requires matching radio settings, calculation/grid versions, and local
 data fingerprints. Terrain and land-cover fingerprints use regional file names,
 sizes, and modification times; measured node surfaces include their raster
 contents. Reloading unchanged tiles into memory does not invalidate coverage.
+Within a coverage run, validated cache hits keep the exact measured-surface
+snapshot used for validation. Preparing an overlapping crop for a newly selected
+node does not restart those completed nodes during that run.
 Adding, replacing, deleting, or compacting relevant cached tiles can invalidate
 it. Validation does not contact providers to check for remote dataset updates;
 manually editing cache files while preserving their size and modification time
@@ -144,6 +147,37 @@ Coverage has its own disk budget (1 GiB for a new cache-budget configuration).
 Existing configurations with no Coverage field retain unlimited coverage storage.
 Reads update last-use tracking, including a best-effort filesystem access stamp
 for later sessions. Cache removal leaves the saved network intact.
+
+### Network link results
+
+Completed network link solves are cached automatically under `links/` in the
+active cache root. Re-evaluating an unchanged network, including after restart,
+can restore the same numeric links while skipping terrain/LiDAR planning,
+surface preparation, path sampling, and propagation. Receiver noise floors are
+sampled fresh before checking reuse. The status line says **Reused cached network
+links** on a hit. A complete result with no viable links is also reusable.
+
+Reuse requires matching participating sites, radio settings, frequency, cutoff,
+propagation and clutter settings, calculation versions, and local source data.
+Renaming a site or changing map styling does not invalidate it. Metadata checks
+do not contact providers. This first implementation conservatively includes the
+whole local terrain, land-cover, and enabled LiDAR inventory; preparing data in
+another area can therefore invalidate a saved solve. Each selection/target scope
+has its own snapshot; changing a site's radio settings recalculates that scope.
+Individual profile windows and antenna-height trials retain their existing caches.
+
+Changing data during planning or evaluation prevents caching that pass. Once
+downloads and surface preparation settle, a complete stable solve creates the
+reusable result. Missing registered sources, sampled fallback terrain, unknown
+clutter classes, failed propagation, incomplete/memory-limited LiDAR preparation,
+or cancellation also prevent publication. Missing, corrupt, oversized, and stale
+entries cause a normal recalculation.
+
+**Settings → Terrain & Geodata Settings → Memory & Disk Budgets** exposes the
+separate **Links** category, its usage, and clearing/eviction. New budget
+configurations default to 256 MiB; older configurations without a Links field
+retain unlimited link storage. Clearing Links leaves downloaded terrain/LiDAR,
+coverage caches, and saved network files intact.
 
 **Work Offline** blocks terrain, land cover, LiDAR, FCC, geocoding, population,
 node-source, and basemap requests. Cached content remains usable.

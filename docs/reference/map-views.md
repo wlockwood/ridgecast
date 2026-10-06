@@ -43,10 +43,11 @@ from the network. Site Score entries color existing nodes; start a scan through
 
 Short names use a node's custom shortname when one is set. Otherwise, RidgeCast
 shortens its name to the **Target Shortname Length** in Settings. Names that fit
-stay unchanged. Common word abbreviations apply only when they do not go below
-the target length; any remaining characters are removed one at a time. The
-shortener favors word initials and edges, keeps common digraphs together when
-possible, and treats a final silent E as low value.
+stay unchanged. Spaces between words go first, then approved abbreviations
+such as `Mountain` → `Mtn`. Numbers, call signs, `Alt` and directions are never
+altered. If a name still doesn't fit, the closest version is shown unless you
+choose a **Shortname Fallback**. See [Shortnames](shortnames.md) for the full
+rules, the place-alias region, and where the abbreviations come from.
 
 ## Network overlays
 
@@ -70,7 +71,7 @@ replaced document are discarded.
 - **Fit to Visible Coverage** fits calculated cells visible under the current
   fade-margin thresholds. It requires calculated coverage.
 
-Map Settings separately controls the basemap, terrain and land-cover blending,
+The map’s **Layers** drawer controls the basemap, terrain and land-cover blending,
 coverage presentation, cached DSM hillshade, vector layers, amateur-license
 visibility, callsign labels, and license coloring (License Class, Site Finder
 Score, or Link Count; see [Use FCC amateur-license data](../how-to/use-fcc-amateur-data.md)).
