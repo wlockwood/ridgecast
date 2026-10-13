@@ -39,7 +39,10 @@ The optional basemap zoom range is reported explicitly as **unsupported** for
 certification: provider HTTP cache metadata cannot reliably establish exact
 image availability. This does not imply that other zooms are cached. RF readiness
 can be checked without selecting basemap certification. Inspect the map at the
-needed zooms while online and verify it after switching offline.
+needed zooms while online and verify it after switching offline. Regional water
+polygons also require this visual check: task readiness does not certify their
+availability across a region. Site Finder uses available cached water at scan
+start; missing water keeps candidates eligible and does not block a scan.
 
 [Registered local rasters](register-local-raster-sources.md) are restored from
 their checked content copies. Corrupt or replaced copies are reported and require
@@ -48,8 +51,10 @@ data, then enable **Downloads → Work offline** and run the intended calculatio
 
 ## Prepare an area for offline work
 
-These steps prepare terrain and land cover only. They do not verify basemap,
-LiDAR, population, or calculated-result caches. Run the specific links,
+These steps check and prepare terrain and land cover. Regional water can queue
+asynchronously for a requested area; terrain/land-cover counts do not certify its
+completion. They do not verify basemap, LiDAR, population, or calculated-result
+caches. Run the specific links,
 coverage, and data loads you will need while online, then verify them after
 switching offline.
 
@@ -65,15 +70,16 @@ switching offline.
    zero to establish file presence; use the task checker above to validate sampled
    data and NoData coverage. **Cancel Downloads**
    stops all active downloads, including those from other tasks.
-4. Run the links and coverage you expect to use so their dependent data and
-   persistent results are cached.
+4. Inspect the intended viewport at the needed terrain-overlay zooms while
+   online so regional water can load. Run the links and coverage you expect to
+   use so their dependent data and persistent results are cached.
 5. Open **Downloads** and wait for active transfers to finish.
 6. Enable **Downloads → Work offline**.
 7. Revisit the area and repeat the important calculations to verify that the
    required data is available.
 
-Offline mode blocks every outbound request, including basemap tiles. Previously
-cached data remains available; an area that was never downloaded can remain
+Offline mode blocks every outbound request, including basemap and regional water
+tiles. Previously cached data remains available; an area that was never downloaded can remain
 blank. Downloads already under way are held at their next checkpoint and can
 resume when **Work offline** is turned off; they are not discarded. Wait for
 **Downloads** to show no active transfers before relying on offline mode for a
@@ -95,12 +101,22 @@ Changing the setting redirects future cache use; it does not migrate the old
 directory. A cache root is per-user and is not safe to share concurrently across
 several RidgeCast installations.
 
+After moving to another volume, rerun **Settings → Performance & Calibration**
+with **LiDAR preparation** selected. Old filesystem measurements cannot qualify
+the new volume. The benchmark works offline using local generated point clouds
+and at most 256 MiB of temporary files; cancellation removes its scratch files
+and retains prior calibration. Existing prepared surfaces keep their normal
+freshness and reuse rules when the selected CPU/GPU backend changes. Read-cache
+state is warm or unknown, rather than a claimed cold NVMe measurement. See
+[Benchmark this computer](benchmark-this-computer.md#lidar-preparation).
+
 ## Reduce cache usage
 
 Use **Application Preferences** to inspect each cache category and set or remove
 its limit. **Compact** rewrites older uncompressed cached rasters without
 deleting them. WorldPop rasters and uncategorized files are not automatically
-evicted.
+evicted. Regional water under `water_vector/` shares the **Map tiles** budget;
+clearing that category removes downloaded water as well as basemap tiles.
 
 See [Data sources and caches](../reference/data-sources-and-caches.md) for paths,
 categories, and network endpoints, and [the detailed data guide](../data-and-caching.md)

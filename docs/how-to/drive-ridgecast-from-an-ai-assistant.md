@@ -29,6 +29,10 @@ common JSON configuration shape can use:
       "command": "C:\\Users\\you\\Apps\\RidgeCast\\ridgecast-mcp.exe",
       "args": [
         "--offline",
+        "--allow-dir",
+        "C:\\Users\\you\\Documents\\RidgeCast",
+        "--workspace",
+        "C:\\Users\\you\\AppData\\Local\\RidgeCast\\workspace",
         "--limitation-log",
         "C:\\Users\\you\\Documents\\RidgeCast\\mcp-limitations.md"
       ]
@@ -37,10 +41,16 @@ common JSON configuration shape can use:
 }
 ```
 
-Create the writable log directory first and substitute your actual paths.
+Create the writable log and network directories first and substitute your
+actual paths. Repeat `--allow-dir` for each directory the assistant should be
+permitted to access for networks, exports, or coverage artifacts (if omitted, the
+server only permits paths inside its working directory).
 JSON uses doubled backslashes; paths with spaces remain a single string and do
-not need embedded quotes. Omit `--offline` to permit normal downloads. The
-default cache root is shared with the desktop; supply `--cache-dir` and an
+not need embedded quotes. Omit `--offline` to permit normal downloads; with it,
+the assistant cannot turn downloads back on. `--workspace` points the server at
+the folder the installed desktop keeps its terrain and land-cover source settings
+in, so both use the same sources whatever folder your client starts the server
+in. The default cache root is shared with the desktop; supply `--cache-dir` and an
 absolute writable path to choose a separate root. No source checkout or running
 desktop session is needed. Check available options with:
 
@@ -105,7 +115,7 @@ further configuration.
 To register it manually with Claude Code:
 
 ```bash
-claude mcp add ridgecast -- cargo run --quiet --release --package ridgecast-mcp --
+claude mcp add ridgecast -- cargo run --quiet --release --locked --package ridgecast-mcp --
 ```
 
 Confirm it starts:
@@ -118,10 +128,12 @@ Confirm it starts:
 
 | Option | Effect |
 | --- | --- |
+| `--allow-dir <PATH>` | Permitted directory for file operations. Repeatable. Defaults to current working directory if omitted. Enforces real path containment and prevents symlink escape. |
 | `--cache-dir <PATH>` | Cache root. Defaults to the desktop application's, sharing downloads. |
-| `--offline` | Never download. Uncached data is reported unavailable rather than guessed. |
+| `--offline` | Never download. Uncached data is reported unavailable rather than guessed. The assistant cannot override it. |
 | `--gpu` | Use GPU acceleration where the propagation model allows it. |
 | `--limitation-log <PATH>` | Where gap reports are appended. Defaults to `docs/review/mcp-limitations.md`. |
+| `--workspace <DIR>` | Folder to read `terrain_config.json` and `landcover_sources.json` from. Defaults to the working directory. |
 
 The server speaks the protocol on standard input and output; diagnostics go to
 standard error.
@@ -143,6 +155,12 @@ until you name a file. Give a path the first time:
 
 > Looking at `networks/MapleMesh network.json`, how should we extend coverage
 > toward Maple Valley?
+
+All file paths must reside inside a directory specified by `--allow-dir` (or
+the server's working directory if none was configured). Network and device
+paths (`\\host`, `\\?\`, `\\.\`, `/dev`, `/proc`, and DOS device names) are
+rejected, and tools only accept appropriate file extensions (`.json`, `.yaml`,
+`.yml` for networks, `.csv` for link lists, `.rccov` for coverage artifacts).
 
 ### Locations
 

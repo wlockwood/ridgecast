@@ -206,12 +206,14 @@ alongside, so it never has to reconstruct a real height from a clamped one. This
 matters only in that the two models are not sharing a single mangled number; it
 is not something you configure.
 
-## 5. The third model, which you do not choose
+## 5. The fast approximation
 
-There is a **GPU approximation**, and it is not in the model menu. It is selected
-by turning on GPU execution for coverage or Site Finder, and it applies **only in
-ITM mode** — terrain diffraction stays on the parallel CPU profile path, so one result never
-silently mixes two models.
+There is a **fast approximation**, separate from the propagation model menu.
+Site Finder selects it explicitly with **Fast (CPU + GPUs)**, sharing the same
+approximation across CPU workers and available GPUs. **Full quality (CPU)**
+retains the selected full propagation model for every candidate. Fast requires
+compatible legacy ITM settings; terrain diffraction remains available through
+Full quality. Interactive GPU coverage previews also use this approximation.
 
 It is not ITM on a GPU. It is a separate, simpler model written to run thousands
 of profiles per dispatch:

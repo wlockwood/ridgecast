@@ -39,6 +39,10 @@ RidgeCast expects geographic WGS84 coordinates. When GeoJSON or KML coordinates
 are outside geographic bounds, it attempts to unproject Web Mercator
 (EPSG:3857) coordinates automatically.
 
+Polygon holes (GeoJSON interior rings, KML `innerBoundaryIs`) are read and kept
+with the layer, and written back out by GeoJSON export. The map currently draws
+each polygon's outer ring only, so a hole is not cut out of the on-screen fill.
+
 ## Export network and coverage data
 
 1. Calculate the links or coverage you want to publish.
@@ -70,3 +74,8 @@ color pixels are transparent.
 
 See [Files and interchange formats](../reference/files-and-formats.md) for the
 contents and limitations of each format.
+
+For which geometry types are read, what is skipped, and the size limits, see
+[Import formats and limits](../reference/import-formats.md#vector-overlays). For
+how exports are staged and how a GeoTIFF resamples hexagonal cells, see
+[GIS export staging and rollback](../reference/files-and-formats.md#gis-export-staging-and-rollback).

@@ -6,7 +6,8 @@ Distance and height units**.
 
 Distance, height, area, and density readouts put the selected system first and
 show the equivalent in parentheses. Distance and height sliders use convenient
-steps in the selected system. Geodata source titles such as **3m** and **10m**
+steps in the selected system. A slider rounds to its step only when you move
+it, so opening a network never changes its stored values. Geodata source titles such as **3m** and **10m**
 retain their names because those numbers identify the source data.
 
 RidgeCast stores network and calculation values in metric units regardless of

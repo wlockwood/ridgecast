@@ -26,15 +26,24 @@ scientific gates are documented in [optional scientific CPU models](scientific-m
 ## Invocation
 
 ```
-ridgecast-mcp [--cache-dir <PATH>] [--offline] [--gpu] [--limitation-log <PATH>]
+ridgecast-mcp [--allow-dir <PATH>] [--cache-dir <PATH>] [--offline] [--gpu] [--limitation-log <PATH>] [--workspace <DIR>]
 ```
 
 | Option | Default | Effect |
 | --- | --- | --- |
+| `--allow-dir` | current working directory (`.`) | Directory allowed for file reads and writes (repeatable) |
 | `--cache-dir` | the desktop application's cache root | Terrain, land-cover and population cache root |
-| `--offline` | off | Never download; uncached data is reported unavailable |
+| `--offline` | off | Never download, and never send an address to the geocoder; uncached data is reported unavailable. A client cannot turn downloads back on |
 | `--gpu` | off | Use GPU acceleration where the propagation model allows it |
 | `--limitation-log` | `docs/review/mcp-limitations.md` | Where `report_limitation` appends |
+| `--workspace` | the working directory | Folder `terrain_config.json` and `landcover_sources.json` are read from |
+
+`--workspace` matters because those two files choose which download mirrors and
+local raster files the engine uses. The desktop application reads them from its
+working directory, and so does the server by default, so that both share one
+configuration. If the server is started in a folder you do not control, pass
+`--workspace` naming one you do. The server prints which workspace files it
+loaded to standard error at startup, and `server_capabilities` reports them.
 
 The limitation-log path is relative to the server's working directory, not the
 executable. The same default applies to source and packaged servers. Parent
@@ -50,6 +59,20 @@ The server never calls `register_main_thread`. A thread registered there skips
 terrain downloads and solves links serially, which would silently produce empty
 results; see `src/engine/terrain/mod.rs`.
 
+## Allowed folders and path safety
+
+Every path and directory argument passed to any tool is validated against a shared containment and extension policy:
+
+- **Repeatable `--allow-dir <PATH>` flag**: Configures the folders that tools are allowed to access. When omitted, access defaults to the current working directory (`.`). Pass `--allow-dir` multiple times to grant access across multiple directories.
+- **Network and device path rejection**: Network paths and device namespaces are rejected outright (`\\host`, `\\?\`, `\\.\`, `/dev`, `/proc`, and Windows reserved DOS device names such as `CON`, `NUL`, `AUX`, `COM1`–`COM9`, `LPT1`–`LPT9`).
+- **Real path resolution and containment**: All paths are resolved to their canonical real paths (the parent folder for new writes). The resolved location must sit strictly inside an allowed folder, preventing directory traversal and symlink or junction escapes.
+- **Extension allowlists per tool**: Tools enforce strict extension allowlists on files they read or write:
+  - `open_network`, `save_network`, `merge_network`: `.json`, `.yaml`, `.yml` only.
+  - `export_links_csv`: `.csv` only.
+  - `save_coverage_artifact`, `load_coverage_artifact`: `.rccov` only.
+  - `export_site_candidates`: `.json` for `source_path`; `.csv` or `.geojson`/`.json` for `destination`.
+  - `import_radio_mobile`: path prefix without extension or `.csv`.
+
 ## Sessions
 
 A session is one network held in memory, addressed by an opaque handle.
@@ -58,14 +81,16 @@ A session is one network held in memory, addressed by an opaque handle.
   startup behaviour, which reopens the network the previous run had open.
 - **Nothing is written implicitly.** Edits change memory only.
 - Handles are strings such as `maplemesh-network-1`. Do not parse them.
+- At most 32 networks can be open at once. Opening or creating another fails
+  until one is closed with `close_session`.
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
-| `open_network` | `path` | Handle and summary. Notes when legacy string node IDs were migrated on load |
+| `open_network` | `path` | Handle and summary. Reads .json, .yaml, .yml inside allowed directories. Notes when legacy string node IDs were migrated on load |
 | `create_network` | `frequency_mhz?` | Handle for an empty network. Frequency 1–6000, default 910.525 |
 | `list_sessions` | — | Summary of every open session |
 | `describe_network` | `session_id`, `include_nodes?`, `include_links?` | Totals, extent, system profiles, and optionally nodes and links |
-| `save_network` | `session_id`, `path`, `overwrite?` | Written path. Fails on an existing file unless `overwrite` is true |
+| `save_network` | `session_id`, `path`, `overwrite?` | Written path (.json, .yaml, .yml only; inside allowed directory). Fails on an existing file unless `overwrite` is true |
 | `close_session` | `session_id` | Whether unsaved changes were discarded |
 | `merge_network` | `session_id`, `path` | Counts, plus notes on skipped names, renamed profiles and frequency mismatch |
 
@@ -87,7 +112,7 @@ is an error naming the candidates rather than a guess.
 | --- | --- | --- |
 | `add_nodes` | `session_id`, `nodes[]` | Assigned IDs and a description of each change |
 | `update_node` | `session_id`, `node`, changed fields | Each change in words |
-| `remove_nodes` | `session_id`, `nodes[]` | Removed nodes; every link touching them goes too |
+| `remove_nodes` | `session_id`, `nodes[]` | Removed nodes; every link touching them goes too. All-or-nothing: an unknown or repeated node removes nothing |
 
 Each entry in `nodes[]` needs `name`, `lat` and `lon`. Everything else is
 optional and inherited from the system profile: `shortname`, `role`
@@ -100,7 +125,9 @@ an explicit empty array clears them.
 
 Every node is validated before any is added, so a bad entry does not leave the
 network partly edited. Antenna heights are limited to 0–1000 m and coverage
-ranges to 100–500 000 m.
+ranges to 100–500 000 m. Names are limited to 200 characters and shortnames to
+64, and neither may contain line breaks, tabs or other control characters; the
+same rule applies to system profile IDs and names.
 
 An empty patch is refused rather than silently doing nothing. Supplying
 `antenna_azimuth_deg` also makes the antenna directional, and the bearing wraps
@@ -171,13 +198,18 @@ geocoding service itself is unreachable, which is a genuine failure worth record
 A state abbreviation resolves to a state centre, accurate to hundreds of kilometres.
 It is useful for orienting a map and never for siting a radio.
 
+When the server is offline, addresses are not sent to the Census locator. They
+come back unresolved with guidance to supply coordinates, and without
+`limitation`, because offline was the operator's choice. State abbreviations
+still resolve.
+
 ## Link evaluation
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `evaluate_link` | `session_id?`, `from`, `to`, `frequency_mhz?`, `reference?`, `endpoint_antenna_height_m?` | Full budget in both directions |
 | `signal_at_point` | `session_id`, `lat`, `lon`, receiver overrides | Which nodes serve a point, and how well |
-| `solve_antenna_height` | `session_id?`, `from`, `to`, a target, `raise?`, `max_height_m?`, `reference?` | The heights the path needs |
+| `solve_antenna_height` | `session_id?`, `from`, `to`, a target, `raise?`, `max_height_m?`, `reference?`, `frequency_mhz?` | The heights the path needs |
 
 An endpoint is `{node}` (needing `session_id`) or `{lat, lon}`. A node reference
 takes precedence when both are given.
@@ -323,7 +355,7 @@ Shared arguments:
 | Argument | Default | Notes |
 | --- | --- | --- |
 | `minimum_margin_db` | Saved profile, otherwise 0 | Fade margin a link needs to count as usable; raising it prunes marginal links |
-| `route_goal` | Saved profile, otherwise `fewest_hops` | Also `highest_reliability`, `strongest_weakest_hop`, `lowest_latency`, `lowest_airtime`, `hybrid` |
+| `route_goal` | Saved profile, otherwise `fewest_hops` | Also `highest_reliability`, `strongest_weakest_hop`, `lowest_latency`, `lowest_airtime`, `hybrid` (currently costed the same as `lowest_airtime`) |
 | `route_limit` | 3 | 1–10 listed independent routes; the exact node/edge count is separate |
 | `independence_mode` | Saved profile, otherwise `node` | `node`, `edge`, or `risk` |
 | `ignore_endpoint_risk` | `true` | Routes inherently share endpoints; set false to include their risk labels |
@@ -584,7 +616,7 @@ Site scans and chain searches run for minutes, so they return a job handle.
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `job_status` | `job_id` | State, phase, progress, and the result once finished |
-| `list_jobs` | — | Running and recently finished jobs |
+| `list_jobs` | — | Running and recently finished jobs, newest first |
 | `cancel_job` | `job_id` | Whether it was still running |
 
 Job kinds: `solve_links`, `coverage`, `site_finder`, `repeater_chain`, `network_analysis`.
@@ -837,7 +869,7 @@ produced it, so two runs made under different settings are not comparable.
 | `measured_surfaces_enabled` | Use LiDAR surfaces instead of categorical clutter heights |
 | `land_cover_clutter_enabled` | Off makes every prediction optimistic |
 | `clutter_heights_m` | `[[class_code, height_m], …]` overrides |
-| `offline` | Stop or resume downloads |
+| `offline` | Stop or resume downloads. Resuming is refused, and nothing in the change is applied, when the server was started with `--offline` |
 
 These configure process-wide defaults captured by subsequently started jobs.
 Already running jobs retain their immutable settings snapshot; `invalidates_results`
@@ -912,7 +944,7 @@ against `returned` so a truncated list is never mistaken for a complete one.
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
-| `server_capabilities` | — | Version, cache root, GPU availability, propagation model, and current supported and unsupported lists |
+| `server_capabilities` | — | Version, cache root, workspace folder and the workspace files loaded, offline state and whether the operator locked it, GPU availability, propagation model, and current supported and unsupported lists |
 | `report_limitation` | `kind`, `summary`, `request`, `attempted`, `missing`, `suggestion?` | Path written and total entries |
 
 `kind` is one of:
@@ -930,6 +962,12 @@ Entries append to a Markdown file, newest last, one `##` heading each with
 labelled lines. An entry missing `summary`, `request`, `attempted` or `missing` is
 refused: an entry that cannot be triaged is worse than none. Multi-line pasted
 output is flattened so one entry cannot break the file's structure.
+
+Entries are written by a model and read later by people and other agents, so
+the text is made inert before it is written: angle brackets are escaped, so
+nothing can hide in an HTML comment that a rendered view would not show; image
+syntax is broken, so viewing the file fetches nothing; and each field is cut at
+2000 characters, with a marker.
 
 ## Durable retained coverage
 
@@ -1008,6 +1046,137 @@ also means edits made mid-run do not affect it.
 Blocking engine work runs on plain threads outside the async runtime, because the
 engine reaches the network through a blocking HTTP client that cannot run inside
 one.
+
+## Security model and file formats
+
+### Path containment in detail
+
+Every tool that takes a path validates it first (`crates/ridgecast-mcp/src/paths.rs`),
+before any file is touched:
+
+1. **Pattern rejection.** UNC and device paths (`\\host`, `\\?\`, `\\.\`,
+   `/dev`, `/proc`) and Windows reserved device names are refused outright.
+2. **Extension allowlist** for the tool (see above). The check is on the text
+   given, before any resolution.
+3. **Canonical resolution.** A path that is read is resolved to its real
+   location (following symlinks and junctions), must exist, and must be a file.
+   A path that is written has its *parent folder* resolved, and if the
+   destination already exists (including as a symlink) its resolved target is
+   checked too, so a link inside an allowed folder cannot point a write outside
+   it. A destination that is an existing directory is refused.
+4. **Containment.** The resolved path must lie inside at least one allowed
+   directory, by path component. On Windows the comparison ignores case and treats
+   a `\\?\` drive prefix as equal to the plain drive letter.
+5. **Output directories** (`output_dir`) are checked the same way. If the
+   directory does not exist yet, its deepest existing ancestor must be inside an
+   allowed folder, and the part still to be created may not contain `..`.
+
+Allowed folders are canonicalised once at startup; a folder that cannot be
+resolved, or is not a directory, stops the server from starting. The paths the
+server *returns* are the resolved ones.
+
+**What the allowlist does not cover.** `--cache-dir` is trusted launch
+configuration, not a tool argument, and is not checked against `--allow-dir`. The
+`--limitation-log` path is likewise a launch option: `report_limitation` appends
+to it even when it lies outside every allowed folder, and creates missing parent
+directories. Point it at a folder you are content for the client to append to.
+
+### Limitation log format
+
+`report_limitation` appends to the file named by `--limitation-log` (default
+`docs/review/mcp-limitations.md`, relative to the server's working directory).
+The file is created on first use with a fixed `# MCP limitation log` heading and
+short preamble, and appends are serialized so concurrent reports cannot
+interleave. Each entry is:
+
+```markdown
+
+## <summary, on one line>
+
+- **Recorded:** <UTC timestamp>
+- **Kind:** <label> (`<kind slug>`)
+- **Reported by:** <client>            (only if given)
+- **Request:** <what the person asked for>
+- **Attempted:** <what was tried>
+- **Missing:** <what was missing>
+- **Suggestion:** <idea>               (only if given)
+```
+
+`summary`, `request`, `attempted` and `missing` must be non-blank or the report
+is refused. Every field is flattened to a single line (runs of whitespace,
+including newlines, become one space, and a blank value is written as
+`(not given)`), so pasted tool output cannot add a `##` heading or break the
+structure. The returned `total_entries` is the number of lines in the file that
+start with `## `. Entries are never edited or removed by the server.
+
+### Analysis input precedence
+
+`analyze_network` resolves each option from three layers; the first that supplies a
+value wins:
+
+1. **Explicit arguments on the call.** Anything you pass (`minimum_margin_db`,
+   `route_goal`, `phy_rate_bps`, `latency_ms_per_hop` or `latency_unknown`,
+   `independence_mode`, `service_direction`, `exact_contention`,
+   `sweep_articulation_only`) is an override. Overrides win even when the value
+   is zero or "unknown": `latency_unknown: true` forces latency to unset even if
+   the saved profile has one.
+2. **The saved analysis profile** stored in the session (see *Authored analysis
+   inputs*), for options you did not pass.
+3. **The request's built-in defaults**: margin 0 dB, fewest hops, node-disjoint
+   routes, two-way service, no rate or latency, no exact contention, no
+   articulation-only sweep.
+
+A profile value replaces a built-in default only when the request still holds
+that default, so a call cannot request "margin 0" explicitly without also
+passing it as an argument. The flag options (`exact_contention`,
+`sweep_articulation_only`) are on if either the profile or the call turns them
+on, unless the call passes them explicitly. `risk_pool_cap` defaults to 64 and
+must be 1 to 128; `ignore_endpoint_risk` defaults to true. The resolved profile
+that was actually used is reported back with the result.
+
+### The `.rccov` coverage archive
+
+`save_coverage_artifact` and `load_coverage_artifact` use a versioned binary
+container. It is distinct from the desktop application's per-node cache grids,
+which are also stored in `.rcov` files but in a different format (see
+[Coverage maps](../concepts/coverage.md#run-internals-and-cache-identity-for-maintainers)).
+
+| Offset | Content |
+| --- | --- |
+| 0–7 | magic `RCCOV001` |
+| 8–15 | uncompressed payload length, u64 little-endian |
+| 16–47 | SHA-256 of the uncompressed payload |
+| 48– | the payload as one zstd stream (level 3) |
+
+The payload is JSON (`version` 1) holding the session id, the cells (polygon of
+at most 64 vertices, RGBA colour, signal in dB or null for non-finite values,
+an offline-unavailable flag, and for Best Unit, Redundancy and Unique Coverage
+the per-node summaries and margins), the grid resolution and range, the three
+fade-margin thresholds, the merge mode, node ids, the creation time, bounds, and
+a **provenance** record: SHA-256 of the authored network (sorted nodes, systems,
+frequency and configuration, excluding solved links and allocator state, so
+node ids are part of the identity), SHA-256 of the propagation, terrain and
+clutter settings (download behaviour and cache sizing excluded, so going offline
+does not invalidate a result), the source extent and a fingerprint of the cached
+terrain and land-cover files under it, the transmitters, receiver, direction,
+angular resolution and application version.
+
+Limits: 64 MiB on disk, 128 MiB expanded, 150,000 cells, 4,096 nodes per cell.
+Every sequence is read with a bound so a hostile file cannot make the reader
+allocate past it. A load checks, in order, the file size, magic, length,
+checksum, payload version, counts, finite positive dimensions and thresholds,
+bounds, and cell geometry; any failure is an error, never a panic. A save
+refuses to overwrite unless asked, refuses a result without provenance, and
+publishes through a staged file so a failed or canceled save keeps the previous
+destination.
+
+**Binding to a session** (`validate_binding`) is a separate step that runs when
+a loaded or retained result is used for analysis. It fails, with a message
+telling you to recalculate, if the network fingerprint differs, if per-node
+margins name nodes no longer in the session, if the cached source data under the
+extent changed, if the coverage used synthetic place transmitters and per-node
+margins are needed, or if the model settings differ. A result with no
+provenance (a legacy one) can still be exported on its own but cannot be bound.
 
 ## Related pages
 

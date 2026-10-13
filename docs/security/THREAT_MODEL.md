@@ -1,8 +1,8 @@
 # RidgeCast — Threat Model
 
-**Version**: 1.0  
-**Date**: 2026-08-25  
-**Scope**: RidgeCast Desktop Application (`src/`, `cpp/`, assets, external data pipelines, and local caching)  
+**Version**: 1.1<br>
+**Date**: 2026-08-25 (MCP controls integrated 2026-10-12)<br>
+**Scope**: RidgeCast Desktop Application (`src/`, `cpp/`, assets, external data pipelines, and local caching) and the `ridgecast-mcp` automation server (`crates/ridgecast-mcp`, `src/headless`)<br>
 **Methodology**: STRIDE + OWASP Threat Modeling Framework  
 
 Configured geodata and population mirrors have an HTTPS-only policy. Other
@@ -97,6 +97,9 @@ flowchart TD
 3. **Local Multi-User Adversary (Shared Workstation)**:
    - Another user account on the same physical operating system attempting to access cached data or tamper with pre-allocated temporary files.
    - Motivations: Unauthorized access to cached network topology or FCC licensee mailing addresses.
+4. **Steered Automation Client (MCP)**:
+   - A language model driving `ridgecast-mcp` chooses every tool argument, and what it chooses can be steered by anything it has read: a shared network file, a node name, a web page. Every MCP argument is therefore untrusted input, even though the server runs as the user.
+   - Motivations: Use the server's file and network access to reach parts of the system unrelated to radio planning. See §6.3.
 
 ---
 
@@ -196,6 +199,8 @@ remains. Reassess a row when its code path or dependencies change.
 | **Geodata and population mirror URLs** | Mirror preferences | HTTPS-only scheme verification via `is_transport_secure`; plaintext endpoints are skipped before rendering or fetching. | `src/engine/geodata_sources.rs` |
 | **Other network URLs** | Node sources, ArcGIS responses, geocoding | Each caller validates and constructs its own request; this table does not imply that every URL class shares the mirrors' HTTPS-only policy. | `src/app/ui/windows.rs`, `src/engine/terrain/fetcher.rs`, `src/amateur.rs` |
 | **Database Queries** | Search parameters | Parameterized SQL queries via `rusqlite::params!` and `params_from_iter`. | `src/amateur.rs` |
+| **Overlay references in network files** | Referenced vector layers | Network-share and device paths are refused before any filesystem call; the layer keeps the reason as its load error. Mapped drive letters are allowed. | `src/path_safety.rs`, `src/vector_layers.rs` |
+| **Network file size** | `.json` / `.yaml` / `.yml` | Reads stop at 256 MiB, counted on bytes read, so a device or endless stream cannot exhaust memory. | `src/network_file.rs` |
 
 ### 6.2 Concurrency & Thread Isolation Model
 
@@ -203,6 +208,24 @@ remains. Reassess a row when its code path or dependencies change.
 - **Worker Threads**: Background channels (`IoMessage`) receive async job completions.
 - **Compute Pool**: `rayon` manages parallel propagation passes across CPU cores without starving the UI.
 - **GPU Queue**: `wgpu` pipelines run asynchronously on dedicated GPU queues with fallback to CPU.
+
+### 6.3 MCP Server Boundary
+
+The server speaks MCP over stdin/stdout and runs with the full rights of the
+user who started it. Its controls, as of 2026-10-12:
+
+| Threat | Control | Status |
+|--------|---------|--------|
+| A file-writing tool (`save_network`, `export_links_csv`, `export_site_candidates`, `save_coverage_artifact`, `export_gis`, `export_coverage`, `export_coverage_gaps`) writes outside the project: for example a script, built from node names, into a startup folder | Direct arguments are confined to operator-approved `--allow-dir` folders and per-tool extension allowlists, including canonical destination targets. The `overwrite` flag protects existing files from accidents. | 🟢 Mitigated for direct arguments |
+| A file-reading tool (`open_network`, `merge_network`, `import_radio_mobile`, `load_coverage_artifact`, `export_site_candidates.source_path`) reads an unrelated file, or reveals whether one exists | Direct arguments are confined to operator-approved folders and per-tool extension allowlists. Embedded overlay references reject network/device paths but are not yet confined to those folders. | 🟡 **Open** for embedded references |
+| Any path tool given `\\host\share\…` sends the user's NTLM credentials to that host | Refused lexically for direct tool arguments and overlay references inside network files (§6.1), before filesystem access. | 🟢 Mitigated for explicit network/device paths |
+| A huge file, device or endless stream exhausts memory | Network files capped at 256 MiB; `.rccov` and Site Finder results already capped. | 🟢 Mitigated |
+| The client re-enables downloads that the operator disabled | `--offline` locks downloads off for the process; `change_settings` refuses `offline: false` and applies nothing else from that change. `resolve_place` does not contact the geocoder while offline. | 🟢 Mitigated |
+| Node or system names carry line breaks into saved files, exports and model context | Control characters refused; names capped at 200 characters, shortnames at 64. | 🟢 Mitigated |
+| Unbounded open sessions exhaust memory | At most 32 open sessions; at most 4 active jobs. | 🟢 Mitigated |
+| Limitation-log entries carry hidden instructions to the agents that read the log | Fields flattened, HTML escaped, image syntax broken, length capped at 2000; the file header says entries are reports, not instructions. | 🟢 Mitigated |
+| `terrain_config.json` / `landcover_sources.json` in an untrusted launch folder pick mirror hosts and local raster files | `--workspace` names a trusted folder; loaded files are printed at startup and reported by `server_capabilities`. The default stays the working directory, matching the desktop application. | 🟡 Operator choice |
+| The repository's `.mcp.json` launches the server with `cargo run`, building whatever the working tree holds | `--locked` requires the existing dependency resolution and refuses changes to `Cargo.lock`; it can still download dependencies recorded in the lockfile. Anyone able to edit the source can already run code through the build and tests, so this adds no new capability. | 🟢 Accepted |
 
 ---
 
@@ -216,6 +239,8 @@ remains. Reassess a row when its code path or dependencies change.
    - *Recommendation*: Set strict POSIX file permissions (`0700` / `0600`) on Linux/macOS cache directories containing extracted FCC license databases to ensure privacy on multi-user systems.
 4. **Supply Chain & Dependency Auditing**:
    - *Recommendation*: Integrate `cargo-audit` and `cargo-deny` into CI to continuously monitor third-party Rust crates for known CVEs.
+5. **MCP Reference Path Confinement**: 🟡 **Open.** See §6.3.
+   - *Recommendation*: Extend the existing direct-argument confinement policy to overlay references inside network files. Direct arguments already use approved folders, extension allowlists, and network/device path rejection.
 
 ---
 

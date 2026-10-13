@@ -65,3 +65,50 @@ build measured LiDAR surfaces, model access or construction feasibility, or
 create links directly; it starts the normal network link recalculation after
 the nodes are added. Calculated links can differ if measured LiDAR surfaces or
 new data become available, so inspect the recalculated links.
+
+## Search rules and limits
+
+These are the exact rules behind the bounded search, for when a result surprises
+you.
+
+**Inputs.** **Maximum hop** must be 500 m to 50 km. The two endpoints must be
+distinct and within 85 degrees of the equator, and the search does not cross the
+date line. If the endpoints are already within the hop limit and a direct hop
+meets the requirement, the search stops with "no repeater is needed".
+
+**Corridor candidates.** The line between the endpoints is divided into
+`ceil(distance / (0.6 x maximum hop))` sections, at least two. More than 24
+sections is refused, so the longest section you can plan is about
+`24 x 0.6 x maximum hop` (14.4 times the hop limit). At each interior station
+there are three candidates: on the line and one quarter of the hop limit to
+either side. A candidate is dropped, and counted, if it is inside an exclusion
+polygon, its land-cover tile is not loaded (missing), its pixel is NoData, or
+its class is not in the allowed list. A candidate may link to any later station,
+not just the next one, if it is within the hop limit.
+
+**Supplied candidates** are sorted by ID so the result is repeatable, and they
+form a general graph: any candidate may link to any other within the hop limit,
+in any order. A supplied site that coincides with an endpoint (within 1 m) is
+rejected with an error rather than ignored.
+
+**Hop checks.** Each candidate hop samples the terrain about every 30 m (at
+least 10 and at most 600 points) and, if land-cover clutter is enabled, the
+land-cover class along the same line. A hop is *unavailable* (not weak) if any
+elevation came from the constant fallback rather than real terrain, any class is
+NoData, or a receiver noise floor could not be computed. Otherwise both
+directions are evaluated with each radio's antenna gain along the actual
+bearing, and the hop's margin is the smaller of the two. It passes when it is at
+least the larger of your **Minimum fade margin** and the network's Marginal SNR
+cutoff. Radios must also be able to link (node types are compatible).
+
+**Choosing the route.** Each hop costs 1 plus a tiebreak smaller than 0.01 that
+favors a stronger margin, so the proposal always has the **fewest hops** that
+works, and among equal-length chains the one with the stronger hops. Equal costs
+in supplied mode prefer the earlier-sorted predecessor. At most 1,200 hops are
+evaluated in total; reaching that limit ends the search with an error that says
+so, which is different from "no route found" (whose message also reports how many
+candidates lacked land cover, had NoData, and how many hops lacked data).
+
+**If the settings change mid-search.** Changing the propagation settings, or
+canceling, ends the search with "Search again" rather than returning a proposal
+made under mixed assumptions.

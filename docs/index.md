@@ -38,7 +38,9 @@ radio profiles, and fade-margin controls.
   `.rccov` artifacts, preserving per-node and directional margins with guarded
   network/model/source identity.
 
-- Place, edit, import, and organize radio nodes with reusable system profiles.
+- Place, edit, import, and organize radio nodes with reusable system profiles,
+  site-specific RF and antenna overrides, target aiming, concentric range circles,
+  bulk editing, and an integrated [Node Editor Companion Guide](how-to/configure-network-nodes.md).
 - Save project files explicitly, see unsaved changes in the title and status
   bar, and recover unsaved work from separate per-document snapshots. Protect
   edits when opening, replacing, or closing a document; see
@@ -48,6 +50,11 @@ radio profiles, and fade-margin controls.
   with referenced overlays and explicit model assumptions.
 - Choose metric or US customary display units; planning controls show the
   equivalent in parentheses. See [Display units](reference/display-units.md).
+- [Interactive main viewport](how-to/navigate-and-edit-on-the-map.md) with
+  Shift-drag node repositioning, freeform lasso and multi-selection, Multi-Point
+  Ruler with terrain elevation profiles, customizable Layers drawer, and a
+  dismissible nonmodal Companion Guide.
+- Inspect [Link Profile](how-to/evaluate-a-radio-link.md) with persistent line/class legends, A/B mounting references, retained directional budgets and source details, sample selection, and previewed undoable finite-step height proposals.
 - Evaluate directional links with terrain profiles, Fresnel clearance,
   persistent network results that reuse unchanged terrain/LiDAR evaluations,
   automated antenna height solving (to achieve ≥60% Fresnel clearance or a
@@ -82,6 +89,17 @@ radio profiles, and fade-margin controls.
   would add; refine promising cells, compare added coverage, check and load
   population data, freeze explicit transmitter/receiver assumptions, inspect
   sampled origins, and export ranked CSV/GeoJSON with original scan provenance.
+  The responsive workbench includes live jealousy/distance controls, score math
+  hovers, cached regional water eligibility and a dismissible Companion Guide.
+  Scans reuse decoded source caches and retain frozen inputs for refinement.
+- [Benchmark CPU and GPU work](how-to/benchmark-this-computer.md) with
+  persistent application-wide calibration shared by Coverage and Site Finder.
+  Separately measure complete LiDAR preparation, including support, cache writes
+  and validation, with per-machine CPU/GPU comparisons and bounded storage tests.
+  See [performance and optimization](reference/performance.md) for measured
+  differences and how caching, CPU concurrency and GPU compute improve throughput.
+  New systems start at 62.5 kHz; Pocket Node provides a common 0 dBi,
+  1 m AGL, 22 dBm reference receiver.
 - [Propose a bounded repeater chain](how-to/plan-a-repeater-chain.md) between two selected nodes using a generated corridor or supplied sites/markers, explicit placement exclusions, and bidirectional RF checks; preview sites before adding them.
 - Analyze backbone reachability, critical nodes, N-1 failures, best and
   [independent routes](concepts/network-analysis.md#8-is-the-redundancy-real),
@@ -116,8 +134,9 @@ radio profiles, and fade-margin controls.
   disconnecting.
   Test individual terrain and population sources in Mirror Preferences with
   fresh sample downloads that stop after the first valid raster.
-- Show the basemap through oceans and lakes in the terrain overlay, using an
-  offline worldwide water mask while preserving land below sea level.
+- Show the basemap through oceans and lakes in the terrain overlay, using
+  regional OpenStreetMap water polygons cached for offline reuse, with a bundled
+  worldwide display fallback while preserving land below sea level.
   See [Terrain overlay and water](reference/controls-and-shortcuts.md#terrain-overlay-and-water).
 - Estimate population using WorldPop 2020 UN-adjusted constrained country tiles.
   [Acquire tiles and publish a mirror](how-to/publish-a-worldpop-mirror.md)
@@ -129,7 +148,9 @@ radio profiles, and fade-margin controls.
 - **New user:** [Plan your first network](tutorials/plan-your-first-network.md)
   with the sample data in the source checkout.
 - **Find radio sites:** [Find and validate candidate sites](how-to/find-and-validate-a-site.md)
-  with Site Finder, or read [how Site Finder scores ground](concepts/site-finder.md).
+  with Site Finder's full-quality CPU scan or its approximate fast scan across
+  CPU workers and available GPUs, or read
+  [how Site Finder scores ground](concepts/site-finder.md).
 - **Complete a task:** Browse the [how-to guides](README.md#complete-a-task).
 - **Look up a control or format:** Browse the
   [reference pages](README.md#look-something-up).
@@ -144,7 +165,7 @@ desktop, MCP and offline documentation. **Help → Check for Updates** provides
 requested signed-release discovery and explicit installation when a trusted key
 is pinned into the build. See [package installation and updates](how-to/install-and-run.md).
 
-Building from source requires Rust 1.93 or
+Building from source requires Rust 1.95 or
 newer, Git, a C++17 compiler, and a desktop graphics environment with WebGPU
 support.
 

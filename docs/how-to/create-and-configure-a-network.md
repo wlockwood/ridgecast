@@ -53,7 +53,9 @@ the full vocabulary and for the few settings that have no tag.
 
 Use multi-selection and **Edit N nodes** to apply the same change to several
 sites as one undoable operation. Use marker nodes for annotations that should
-not participate in RF calculations.
+not participate in RF calculations. For a comprehensive walkthrough of antenna
+overrides, directivity, tilt, range circles, and bulk editing, see
+[Configure network nodes](configure-network-nodes.md).
 
 **Control+Z** walks back any of it — node edits, system changes, the network
 frequency, an import. See
@@ -73,6 +75,9 @@ The window title adds `*` when the document has unsaved changes. The status bar
 shows **Unsaved changes**, **Saving…**, **Saved**, or **Save failed**; a new empty
 network shows **Untitled**. Undoing edits back to the last saved content clears
 the unsaved state. Calculated links alone do not count as an authored edit.
+Selecting sites only views the network: the selection is saved with your next
+save, but changing it counts as unsaved only when the selection now shown had
+its coverage newly calculated rather than loaded from the coverage cache.
 
 The next time you start RidgeCast it reopens the network you had open last,
 taking the newest entry in **File → Recent Networks** that still exists on disk.

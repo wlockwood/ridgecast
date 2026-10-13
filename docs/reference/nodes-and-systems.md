@@ -17,8 +17,8 @@ Editing a system updates nodes that inherit those values.
 
 ### Starter systems
 
-A new network opens with three system profiles covering common install heights.
-Every other parameter starts at the same defaults, and all three are ordinary
+A new network opens with four system profiles covering common install heights.
+Every other parameter starts at the same defaults, and all four are ordinary
 systems you can edit, rename, duplicate, or delete.
 
 | System | TX power | Antenna gain | Antenna height AGL |
@@ -26,10 +26,12 @@ systems you can edit, rename, duplicate, or delete.
 | **Basic - Single-Story** | 22 dBm | 2 dBi | 6 m (20 ft) |
 | **Moderate - Second Story** | 28 dBm | 5 dBi | 8 m (26 ft) |
 | **Tower** | 30 dBm | 8 dBi | 33 m (108 ft) |
+| **Pocket Node** | 22 dBm | 0 dBi | 1 m (3 ft) |
 
-Nodes that have no system assigned resolve against **Basic - Single-Story**.
+Nodes that have no system assigned, or whose assigned system is missing, use
+the historical Basic installation defaults: 22 dBm, 2 dBi, and 6 m AGL.
 
-All three start with −100 dBm receive sensitivity, 125 kHz noise-equivalent
+New systems start with −100 dBm receive sensitivity, 62.5 kHz noise-equivalent
 bandwidth, 0 dB system loss, and an omnidirectional antenna. Noise figure is
 initially unset; RidgeCast derives a legacy-equivalent value from sensitivity
 and bandwidth, rather than assuming a measured receiver noise figure.
@@ -37,6 +39,25 @@ Frequency belongs to the network, not the system profile: a new network starts
 at 910.525 MHz, editable under **Settings → Network Frequency…**. See
 [From transmit power to fade margin](../concepts/link-budget-and-noise.md)
 before relying on these receive defaults.
+
+The built-in profiles are also available in system pickers and Systems Manager
+for networks saved before these profiles existed. Choosing a built-in for a
+network node adds an ordinary, editable network copy when needed, as part of
+the undoable edit. A custom system named **Pocket Node** remains its own profile;
+RidgeCast identifies built-ins by a stable identifier, not by their display name.
+
+Existing saved bandwidths remain unchanged. Older system files that omit
+bandwidth retain their historical 125 kHz interpretation, as do nodes resolving
+without an assigned or available system. The 62.5 kHz value applies to newly
+created profiles, including all four starter systems.
+
+New Site Finder settings use **Basic - Single-Story** as the transmitter and
+**Pocket Node** as the reference receiver. Opening Site Finder and using those
+reference radios does not add systems to the network. Saved radio settings and
+scan assumptions retain their recorded values; records predating radio
+snapshots retain the historical reference radios. See
+[Site Finder](../concepts/site-finder.md) for the comparison baseline and saved
+scan inputs.
 
 ## Nodes
 

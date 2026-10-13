@@ -311,6 +311,38 @@ A download that ends early is now rejected instead of being cached: RidgeCast
 compares the bytes received against the length the server declared, so a
 truncated raster never lands in the cache looking complete.
 
+The exact rules, for when a download behaves unexpectedly:
+
+- **Sidecar.** `<name>.tmp.source` holds two lines: the URL, then the expected
+  whole-file length (empty if the server did not say). A partial with no sidecar,
+  with a sidecar naming another URL, or longer than its recorded total is
+  discarded and the download starts from zero. The total is read from the
+  `Content-Range` header of a `206` response (a `206`'s `Content-Length` counts
+  only the slice), or from `Content-Length` otherwise.
+- **Already complete.** If the partial's length equals the recorded total, the
+  stream is treated as finished and renamed into place without another request.
+- **Server rejects the range (HTTP 416).** The partial is deleted and that
+  attempt fails; the next attempt starts from zero.
+- **Host ignores `Range`.** A `200` answer to a ranged request overwrites the
+  partial rather than appending. If that transfer then fails, the source is
+  reported unresumable and RidgeCast moves on to the next source instead of
+  retrying it.
+- **Retries per source.** One source gets up to **12** attempts, but only while
+  each failed attempt left more bytes on disk than it started with; the first
+  attempt that makes no progress hands over to the next source. A single request
+  may last up to 30 minutes before it is abandoned as hung, so a slow
+  multi-gigabyte transfer converges across several requests.
+- **Cancel and failure.** Canceling keeps the partial. When no source can supply
+  a country, the failure is remembered in memory for that source configuration, so
+  the same session does not retry it until the sources change or RidgeCast
+  restarts; the partial stays on disk for a later attempt.
+- **Split archives.** For a GitHub 7z-parts source, parts `.001`, `.002`, ...
+  are downloaded until the first 404, up to **4 GiB** in total, joined, and
+  extracted in a scratch directory that is always removed. They are not resumed:
+  a failure restarts the archive. An archive entry whose name is absolute or
+  contains `..` is refused, and only a file with the exact expected constrained
+  name is accepted as the country raster.
+
 ### Publishing a mirror for one country
 
 From the repository root, download the constrained country TIFFs, then upload

@@ -33,6 +33,7 @@ read; after that, jump to the question in front of you.
 | [Coverage maps](coverage.md) | What is at the far end of every coverage calculation, the two grid algorithms, TX versus RX, the four merge modes and why **Best Unit** is special, the per-node cache, and what makes a run slow. |
 | [Finding sites](site-finder.md) | The inverse of coverage: how a candidate location gets a score, where in a cell the antenna is assumed to stand, recursive refinement, cluster suppression and "jealousy", and what a site score is not. |
 | [Network analysis](network-analysis.md) | Properties of the whole network rather than one link: backbone reachability, articulation points, N-1 failure sweeps, routes, route independence, multi-hop throughput, service impact, and the assumptions every result carries. |
+| [Application concurrency](app-concurrency.md) | For contributors: how the desktop application keeps work off the UI thread, the save queue, crash-recovery snapshots, stale-reply tokens, and the background-cache pattern. |
 
 ## Where else to look
 

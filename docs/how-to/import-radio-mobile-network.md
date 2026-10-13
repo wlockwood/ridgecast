@@ -28,3 +28,7 @@ If RidgeCast reports missing files, compare the complete filename prefix and
 extension of all three files. The source checkout's `example-rm-imports/`
 directory contains a known-good `maplenet_*` sample you can import unchanged to
 check the workflow.
+
+For the exact columns read, how a unit's system and nets are chosen, and what
+happens when a node already exists, see
+[Import formats and limits](../reference/import-formats.md#radio-mobile-csv).

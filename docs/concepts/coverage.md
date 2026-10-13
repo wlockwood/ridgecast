@@ -443,6 +443,119 @@ in the coverage calculation cache.
 
 ---
 
+## Run internals and cache identity (for maintainers)
+
+Source: `src/coverage_run.rs` (the run), `src/engine/coverage_cache.rs` (the
+on-disk cache). This section is the maintained description of the cache; the
+[implementation plan](../coverage-cache-implementation-plan.md) records only
+how the work was sequenced.
+
+### Shape of a run
+
+1. Look up each node's cached grid; a node with a usable entry is skipped.
+2. Estimate the decoded terrain the remaining nodes need. In the normal policy
+   the run stops and asks for confirmation if the misses would exceed the cache
+   budget; the budget-confirmed and recompute policies skip that check, and
+   recompute also ignores cached grids.
+3. Queue the missing terrain, land cover, and LiDAR on download workers, which
+   are separate from calculation workers. Calculation workers read only what
+   preparation already cached, so they never wait on the network.
+4. Solve whichever nodes have their inputs ready while downloads continue, and
+   merge each node's grid onto the output grid. Results are published in
+   chunks of 1,000 cells so partial coverage appears while the rest computes.
+
+A run carries a version and a shared cancel flag. Starting a newer run bumps
+the flag and the older run abandons its work at its next check; completed cache
+entries stay available.
+
+### Node grid versus merged grid
+
+- **Node grid** (`node_grid_resolution_m`): the requested resolution, at least
+  10 m, raised only if the node's range disc would need more than 120,000 cells
+  (`MAX_HEXES_PER_NODE`; a hexagon of radius `r` has area 2.598 `r`²). A pure
+  function of one node's range and requested resolution. This value is part of
+  the cache key.
+- **Merged grid** (`merged_grid_resolution_m`): the requested resolution (at
+  least 10 m), raised to fit the whole selection's bounding box within the run's
+  cell budget, and never finer than the coarsest node grid. The budget is
+  150,000 cells for a full run and 3,000 for a preview. For Best Unit,
+  Redundancy and Unique Coverage it is also capped at
+  4,000,000 / (selected nodes), because those modes retain one margin per
+  reaching node per cell (`MAX_RETAINED_COVERAGE_MARGINS`).
+- When the grids differ, each merged cell takes the value of the node cell its
+  *center* falls in (a point sample). Averaging or max-holding would leave holes
+  or count one node into a cell twice, which would inflate Redundancy counts.
+- Radial Sweep uses `360 / angular resolution` rays, but no more than needed to
+  keep rays about half a cell apart at the edge of range, and never more than
+  720.
+
+### Tie-breaking
+
+When several nodes reach a cell, the owner is the one with the higher fade
+margin. On an exact tie the node earlier in the selection order wins, so the
+result does not depend on which node finished first or which download completed
+first.
+
+### Retry when data changes during a solve
+
+The cache key (below) includes a fingerprint of the terrain and land-cover
+files around the node. It is computed before the solve and again after it. If
+the two differ, a download landed while the solve was running, so the grid may
+describe a mixture of old and new data. The run solves that node once more. If
+the second pass is still unstable, its result is displayed but **not** written
+to the cache. A grid is also never written if any cell holds the
+"terrain unavailable" marker (`f32::MAX`), or if measured-surface mode is
+enabled but no compatible surface was prepared (surface revision 0), so that a
+transient offline or catalog failure is retried on the next request instead of
+being cached.
+
+### Cache key
+
+Each node's grid lives in one file, `<cache root>/coverage/<64 hex digits>.rcov`.
+The name is the SHA-256 of the canonical JSON (object keys sorted, floats as
+raw bit patterns) of:
+
+- the calculation version (`CALCULATION_VERSION`, currently 7; bump it whenever
+  propagation, grid enumeration, interpolation, or stored-value semantics
+  change) and the backend, always `cpu` (the GPU is used only for uncached
+  previews, and completed grids are always CPU results);
+- the node's and the Test Node's radio fields: transmit power, sensitivity,
+  gain, height and height reference, system loss, directional settings (azimuth,
+  front-to-back, elevation, vertical response, measured pattern);
+- node latitude and longitude, frequency, range, node grid resolution, angular
+  resolution, algorithm, and mode (TX/RX);
+- the land-cover configuration;
+- the data fingerprint and the measured-surface revision;
+- the propagation model, P.1812 time percentage, ITM settings, ITM-DSM
+  settings and its `ALGORITHM_VERSION` / `COMPOSITION_VERSION`, complete-P.1812
+  settings when present, and the ambient-noise configuration. Receiver-noise
+  fields join the key only when atmospheric noise is enabled, so older keys are
+  unchanged.
+
+Rendering settings, the merged grid resolution, and which other nodes are
+selected are deliberately **not** in the key.
+
+**Data fingerprint.** For the box around the node (range plus 0.02 degrees; a
+box that crosses the antimeridian widens to all longitudes), the fingerprint
+lists every terrain and land-cover cache file that overlaps the box by name,
+size, and modification time. All sources are included even if disabled, and
+presence counts: a new higher-priority tile invalidates an earlier fallback
+result. It reads metadata only, never decoding terrain.
+
+### File format
+
+Magic `RCCOV002`; the 32-byte key; the cell count (u64 little-endian); the
+SHA-256 of the raw values; then the values as little-endian f32, zstd level 3.
+Limits: at most 1,000,000 cells per file. Negative infinity is the stored
+"no coverage" marker; NaN, +infinity and `f32::MAX` are rejected on read and
+write. Any magic, key, size, or checksum mismatch is a plain cache miss. Writes
+go to a `.rcov.tmp` file that is renamed into place, and a write is skipped if
+the run was superseded in the meantime. Reads refresh the file's access time
+for cache eviction. The Coverage cache category has its own capacity (default
+1 GiB); see [Data, caching, and working offline](../data-and-caching.md).
+
+---
+
 ## Where else to look
 
 - **[From transmit power to fade margin](link-budget-and-noise.md)** — what each

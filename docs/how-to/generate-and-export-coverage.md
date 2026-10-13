@@ -286,3 +286,34 @@ settings change while the study runs, the study stops so its height frames
 cannot use different assumptions. Use **Cancel**
 to stop an in-progress study. If the required terrain exceeds the configured
 cache budget, the study pauses for your decision before downloading it.
+
+### Height study rules and limits
+
+- **Which transmitters.** The study lists enabled, visible nodes that are not
+  markers. Opening it picks the most recently selected eligible transmitter, with
+  a 25 m span above its current height.
+- **Height range.** The lower height must be at least 0.1 m (0.3 ft), the higher
+  height at most 1,000 m (3,281 ft), and the higher must exceed the lower. A
+  **Height impact map** always compares exactly those two heights.
+- **GIF frames.** A GIF needs a positive step and holds at most **20** heights.
+  Frames run from the lower height in steps; the higher height is always the
+  final frame even if the step does not divide the span evenly (so the last
+  interval can be shorter), and a range needing more than 20 heights is refused
+  rather than thinned. Each frame is shown for 0.7 seconds and is labeled with
+  its height.
+- **GIF size.** The output is the current map viewport at one pixel per screen
+  pixel and may hold at most **4,000,000 pixels** (4 megapixels); a larger
+  window is refused with a message to zoom in or shrink the window. The GIF is
+  written beside the chosen destination and renamed into place, so a failed or
+  canceled export never damages an existing file. The SNR legend is drawn only
+  when the viewport is big enough for its card, and the export reports when it
+  was omitted.
+- **Unavailable terrain.** A cell whose terrain was unavailable in *either*
+  height is excluded from both sides of the comparison, so missing data is never
+  read as gained or lost coverage. Likewise, the covered-area chart counts only
+  cells with known terrain at every height, so its points are comparable. A cell
+  counts as covered when its SNR is at least the current threshold.
+- **Isolation.** Each height runs through the normal coverage worker on its own
+  channel. The node's stored height, the selection, and the live coverage on the
+  map are never changed, and changing coverage settings while the study runs
+  stops it.

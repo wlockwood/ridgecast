@@ -60,3 +60,6 @@ settings, the network document, or data managers cancel obsolete batches.
 FCC records contain public mailing addresses. Do not commit the downloaded
 archive, extracted records, SQLite database, write-ahead log, or exports that
 contain licensee addresses.
+
+For how the FCC files are read and how addresses are geocoded in batches, see
+[Import formats and limits](../reference/import-formats.md#fcc-amateur-license-import).

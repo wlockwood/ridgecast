@@ -18,7 +18,7 @@ Site Finder evaluates *many candidate nodes* against many points each — every
 hexagonal cell in the visible map becomes a hypothetical transmitter, and each
 one gets a full radial scan of its own.
 
-**Evaluation Resolution (m)** is the nominal distance from a candidate
+**Scan tile radius** is the nominal distance from a candidate
 hexagon's center to one of its corners. It describes the size of the candidate
 cell, not the spacing of receiver samples along each radio ray. Adjacent cell
 centers are farther apart than this radius.
@@ -34,7 +34,14 @@ replace either endpoint. Geographic antenna bearings stay fixed during the
 sweep, and vertical response uses each modeled ray's geometric elevation.
 Height, EIRP, receive gain/loss, operating threshold, noise figure, bandwidth,
 and propagation settings are captured at scan start and reused by refinements.
-Unsupported GPU inputs use the CPU path. Missing terrain or required land-cover
+New settings use a Basic transmitter and the built-in Pocket Node receiver at
+62.5 kHz; legacy saved inputs retain their original values. Unsupported inputs
+disable Fast with an explanation. **Full quality (CPU)** retains the selected
+propagation model, including full ITM, for every candidate. **Fast (CPU + GPUs)**
+uses a matching approximation across CPU workers and available GPUs; CPU fallback
+within Fast retains that approximation. Fast does not implement full ITM and may
+rank sites differently. Saved scans and refinements retain their original mode.
+Missing terrain or required land-cover
 samples contribute to an explicit unavailable count, not successful coverage.
 
 For every candidate cell, Site Finder:
@@ -75,16 +82,33 @@ and coverage.
   weight is adjustable via the **Water Area Value** slider in the Site Finder
   window. Water is detected via NLCD `Open Water` (class 11), with a sea-level
   elevation fallback (≤ 0 m) when land cover is unavailable.
-  This NLCD source covers the contiguous United States. Outside its coverage,
+  This NLCD source covers the contiguous United States; registered WorldCover
+  crops can supply classifications elsewhere. Without available land cover,
   the elevation fallback can misclassify dry land below sea level and miss lakes
-  above sea level. Site Finder scoring does not use the worldwide water mask
-  used by the terrain overlay; review water-heavy rankings accordingly.
+  above sea level. Regional polygon outlines used for display and placement
+  eligibility do not replace this RF scoring classification; review water-heavy
+  rankings accordingly.
 - **Grade by Population.** When enabled in Site Finder, scores use sampled
   WorldPop population values. These are ranking values, not counts of distinct
   people served. Site Finder reports raster availability and offers
   **Load / Retry Population Data** by country code. Missing data is not evidence
   of zero population; see the [loading workflow](../how-to/find-and-validate-a-site.md#grade-by-population).
   **View → Node Colors → Site Score (Population Weighted)** separately colors existing nodes.
+
+Fully water placement is excluded by default for new scans, independently of
+water coverage value. The scan freezes available detailed regional water
+geometry. Only a whole candidate footprint confirmed as water is excluded;
+valid polygons showing land keep it eligible. Unknown regional coverage can
+fall back to known all-water cached land cover. Mixed or incomplete footprints
+remain eligible, and generalized Natural Earth display outlines never establish
+placement eligibility. Missing water does not delay a scan; new geometry is used
+by a new scan rather than changing retained results.
+
+Population scoring records area-weighted density sums: `P = Good + 0.5×Fair +
+0.1×Marginal`, then `Raw = P + 0.001×G`, where G is the geographic weighted score.
+Unavailable population uses the geographic fallback. Score hovers show recorded
+weighted contributions and diversity math; legacy results identify unavailable
+breakdowns.
 
 The candidate list and hover details show **Adjusted score** (used for ranking
 after cluster suppression) alongside **Raw score** (before suppression). This
@@ -352,9 +376,12 @@ interpolating linearly between the two ends:
 the other, so neither suppresses. Cells scoring zero or less are left alone.
 
 Suppression is applied to a **stored raw score**, and recomputed from it. Moving
-the radius or jealousy sliders re-clusters the existing results instantly rather
-than rescanning. Recursion tiers are suppressed independently of one another,
-because hex adjacency only means something within a single resolution.
+the radius or jealousy sliders automatically re-clusters the existing results
+in a background worker without rescanning. Both the heatmap and Top 10 rankings
+update from the latest slider values; changes during a scan or export wait until
+it finishes. **Restore scan values** restores the completed scan's captured
+values. Recursion tiers are suppressed independently of one another, because hex
+adjacency only means something within a single resolution.
 
 > **What jealousy is not.** It does not change which sites are good. It changes
 > how aggressively near-equals are hidden so the good ones are visible. If you
@@ -362,28 +389,28 @@ because hex adjacency only means something within a single resolution.
 
 ## 7. CPU or GPU
 
-Site Finder runs on either, and the distinction is easy to garble, so precisely:
+Site Finder offers two explicit quality modes:
 
 RidgeCast has an application-wide **propagation model** setting — **ITM**
 (Longley–Rice, the default) or **terrain diffraction (P.1812-inspired)**. That is
 the physics used to turn terrain into a path-loss number. Separately, Site Finder
-can run its scan on the CPU or the GPU.
+offers **Full quality (CPU)** and **Fast (CPU + GPUs)**.
 
-- **In ITM mode**, the CPU path runs ITM proper, and the GPU path substitutes a
-  faster, cruder kernel of its own — free-space loss plus knife-edge diffraction
-  plus a two-ray floor. So "GPU" here does not mean "ITM on a graphics card"; it
-  means a different, simpler model.
-- **In terrain-diffraction mode**, there is no matching GPU kernel. **Start GPU
-  Scan** remains enabled but starts the same CPU path as **Start CPU Scan**;
-  it gives no GPU speed benefit. In ITM mode, the GPU button requires a GPU
-  engine and reports **Error: GPU Engine Required** when none is available.
+- **Full quality** evaluates every candidate with the selected CPU model and
+  its captured settings. Selecting Fast never changes this full scan's accuracy.
+- **Fast** uses free-space loss, three-edge knife-edge diffraction and a two-ray
+  floor. CPU workers and available GPUs share this approximation and dynamically
+  claim batches. It can run without a GPU; device failure uses the same fast CPU
+  calculation. Fast requires compatible legacy Longley–Rice settings and
+  supported radio/noise inputs. Other settings retain Full quality.
 
 Details of all three models are in **[Choosing a propagation
 model](propagation-models.md)**.
 
-The intended workflow is: **GPU for the sweep, CPU coverage for the shortlist.**
-The GPU pass is for telling a ridge from a valley across a whole map in seconds.
-It is not the number to put in a report.
+Use Fast to explore an area, then validate promising candidates with Full quality
+and ordinary CPU Coverage and links. Fast is an approximation, and it can miss
+sites that full ITM would rank highly. An exhaustive Full quality scan remains
+available when that matters.
 
 ## 8. Making a scan finish
 
@@ -402,19 +429,25 @@ Site Finder ships three intent presets:
 
 | Preset | Resolution | Recursion | Notes |
 | --- | --- | --- | --- |
-| **⚡ Fast Scout** | 200 m | 0 | A first look at a wide area |
-| **🎯 Standard Prospect** | 100 m | 1 | With land-cover clutter |
-| **🔬 Deep Ridge Hunt** | 30 m | 2 | With high suppression |
+| **Fast** | 200 m | 0 | A first look at a wide area |
+| **Balanced** | 100 m | 1 | With land-cover clutter |
+| **Detailed** | 30 m | 2 | With land-cover clutter |
 
-alongside color-coded cell-count and runtime estimates (Fast / Moderate /
-Heavy), so an expensive scan can be recognized before it starts.
+The window also shows candidate-count, terrain-readiness and a compatible
+Full quality CPU runtime estimate. Fast is identified as not calibrated.
+The [application-wide benchmark](../how-to/benchmark-this-computer.md) measures
+real CPU Coverage and CPU/GPU Site Finder work, sharing persistent calibration
+between both tools. Downloads are separate from measured computation time.
 
 Stopping an in-progress scan **keeps everything computed so far**: partial results
 are clustered and retained rather than discarded, so a scan that is taking too
 long can be stopped and read rather than abandoned.
 
-Scans run outside the UI thread and stream bounded result chunks back, so the map
-stays responsive throughout.
+Scans run outside the UI thread and publish immutable result views assembled on
+workers. The desktop consumes the latest bounded preview instead of accumulating
+stale updates, keeping progress and map interaction independent of the full
+retained result set. Matching scans reuse decoded source caches; acquisition and
+missing inputs still add work.
 
 ## 9. Reading and sharing the results
 
@@ -427,15 +460,17 @@ stays responsive throughout.
   tall ground hard, which is the point — it surfaces modest hills that a raw
   ranking, which naturally favours mountains, would bury. It is shown on hover
   alongside the raw score and the average elevation it was computed from.
-- **Population grading** (optional) replaces the geometric score entirely with
-  population reached, weighting the people under Good points fully, Fair at half,
-  and Marginal at a tenth. Points grading as None contribute nothing — there is
-  no negative term in this mode, because nobody is served at an uncovered point.
-  This ranks sites by *people served* rather than by ground covered, which is a
-  different and often better question.
+- **Population grading** (optional) uses area-weighted density sums under Good
+  samples fully, Fair at half and Marginal at a tenth, plus 0.001 times the
+  geographic score as a tie-breaker. Unserved samples contribute through that
+  geographic tie-breaker. These are comparative ranking values, not distinct
+  people served; sampled ray sectors overlap.
 - **JSON import/export** retains original radio, model, sampling, and suppression
   assumptions. **CSV and GeoJSON** export ranked full, top-ten, or selected
   candidates, including raw scores, per-cell resolutions, and recorded origins.
+  Refinement requires the original source inputs, coverage filter and frozen
+  water geometry. JSON records water identity without embedding polygons; an
+  unavailable original snapshot requires a new scan before refinement.
   Old imported files retain explicit unknown assumptions and origins. **PNG
   rendering** provides a visual summary for review and sharing.
 
@@ -461,6 +496,83 @@ stays responsive throughout.
   candidates once you have.
 - **The weights are an editorial choice** (§2), as is fortuity's division by the
   square of elevation. They are defensible, not derived.
+
+---
+
+## Scoring details for maintainers
+
+These are the exact rules behind the numbers above. Source:
+`src/engine/site_finder.rs` and `src/engine/site_assumptions.rs`.
+
+**Grade weights.** Each of the 22,680 sample points is graded once against the
+captured Good / Fair / Marginal SNR thresholds and adds `+1`, `+0.5`, `+0.1`
+(each times the sample's water weight) or, for None, a flat `−0.1`. The None
+penalty is *not* scaled by the water weight, so open water that cannot be
+reached still costs a full `0.1`. `SITE_SCORE_MAX` is 22,680 and
+`SITE_SCORE_MIN` is −2,268.
+
+**Population blend and tie-break.** With **Grade by Population** on and a
+population raster loaded, each graded sample also records its location and its
+annular area (radius × radial step × one degree). The three grade groups are
+summed with area weighting, and the stored score is
+
+```
+score = (Good + 0.5·Fair + 0.1·Marginal)  +  0.001 × geographic score
+```
+
+where the three populations are the area-weighted sums per grade. The geographic
+score is therefore only a tie-breaker: it moves a population-graded score by
+at most about 22 points, and it matters only between candidates whose weighted
+population is otherwise nearly equal. If no population raster is loaded the
+geographic score is used unchanged.
+
+**Global hex grid.** Candidate cells are cells of one pointy-top axial `(q, r)`
+lattice anchored at latitude 0, longitude 0, with cell radius equal to the scan
+resolution. The projection is a plain affine map with fixed scales
+(111,320 m per degree of latitude; 111,320 × cos 45° m per degree of
+longitude), *not* `cos(latitude)`. A latitude-dependent scale would shear the
+lattice by many cells a few hundred kilometres from the origin and make cells
+jitter. The consequence is that a cell's east–west ground width is
+`cos(latitude) / cos(45°)` of its nominal width: roughly nominal in the
+mid-latitudes, 1.41× at the equator and 0.71× at 60°. Cell outlines must come
+from the lattice (`hex_cell_polygon`), not from a hexagon sized in meters.
+Every scan, refinement, coverage filter, and cluster-suppression lookup uses
+the same lattice, so they agree on which cell a point belongs to.
+`scan_points_for_bounds` returns the cell centers inside a bounding box in
+ascending `q`, then `r`, order.
+
+**Refinement children.** A refined cell is replaced by seven children at half
+the parent's radius (`SUBDIVISION_RESOLUTION_RATIO = 0.5`): one on the parent's
+center and its six neighbours on the child lattice. Neighbouring parents share
+boundary children, which are de-duplicated by child-lattice coordinate.
+
+**Diversity (cluster-suppression) rules.** Suppression is recomputed from the
+stored `base_score`. Per resolution tier it builds a dense grid over the tier's
+bounding box (or a hash map when the box would exceed 8,000,000 cells), then
+walks rings outward from each cell. For ring distance `d` the falloff is the
+smoothstep of `t = 1 − d/(radius+1)`; the walk stops as soon as the next ring's
+falloff cannot beat the suppression already found. Cells with a score of zero
+or less, and a radius of 0, are left unchanged. The strongest single suppressor
+is kept and recorded (neighbour hex, distance, falloff, contrast) so score
+hovers can show the arithmetic.
+
+**Ranking list.** The Top 10 list keeps the ten highest finite
+*post-suppression* scores (the helper caps any request at 100). Candidates with
+equal scores keep their input order, so the earlier result stays ahead.
+
+**The Fast model identity.** A scan's frozen assumptions store its model as a
+string: `cpu` (Full quality) or `fast_cpu_gpu_v1` (Fast). Older saved scans that
+say `gpu` load as Fast. Any other value is rejected on load. The `_v1` suffix is
+part of the saved format: changing the Fast arithmetic requires a new identity,
+so a retained scan is never silently re-interpreted. Fast evaluates all 360
+rays with the free-space, three-edge Deygout and two-ray model described in
+[Choosing a propagation model](propagation-models.md#5-the-fast-approximation).
+CPU workers and each GPU claim unique candidate ranges from a shared counter,
+so a slow device only delays its own batch. A batch whose device fails is retried
+once with the identical CPU approximation, and results from a superseded scan
+generation are discarded. Where an SNR lands within 0.02 dB of a grade threshold,
+the canonical f32 CPU loss is used instead of the GPU value, so device rounding
+cannot change a grade.
 
 ---
 

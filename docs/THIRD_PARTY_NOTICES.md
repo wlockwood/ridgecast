@@ -10,6 +10,23 @@ RidgeCast depends on third-party Rust crates whose exact versions are recorded i
 
 The shortname dictionaries in `src/shortname/dictionaries/` restate factual word-to-abbreviation pairs from [USPS Publication 28](https://pe.usps.com/text/pub28/), Appendix B (state, possession and directional codes) and Appendix C1 (street suffixes), in label capitalization. No USPS text or table layout is reproduced. The selection and its review status are recorded in `src/shortname/dictionaries/sources.json`.
 
+## Regional OpenStreetMap water tiles
+
+RidgeCast downloads regional water polygons served by
+[OpenFreeMap](https://openfreemap.org/) using the
+[OpenMapTiles](https://openmaptiles.org/) schema. The served map data is derived
+from OpenStreetMap and is available under the Open Database License (ODbL),
+with credit to OpenStreetMap and its contributors. OpenFreeMap's software
+license does not relicense the served data.
+
+Attribution: [OpenFreeMap](https://openfreemap.org/),
+[© OpenMapTiles](https://openmaptiles.org/),
+[data © OpenStreetMap contributors — ODbL](https://www.openstreetmap.org/copyright).
+See [OpenStreetMap copyright and licensing](https://www.openstreetmap.org/copyright)
+and [water sources and provenance](reference/water-mask-provenance.md).
+Cached tiles are downloaded data, distinct from the bundled public-domain
+Natural Earth fallback below.
+
 ## Natural Earth water polygons
 
 `resources/water/natural-earth-water.bin.gz` is derived from Natural Earth's
@@ -17,7 +34,7 @@ The shortname dictionaries in `src/shortname/dictionaries/` restate factual word
 modified and redistributed. RidgeCast converts the polygon coordinates into
 a compressed binary mask source for terrain display. The pinned source
 revision, hashes, format, and rebuild instructions are recorded in
-[Natural Earth water mask provenance](reference/water-mask-provenance.md).
+[Water sources and mask provenance](reference/water-mask-provenance.md).
 
 - [Natural Earth physical vectors](https://www.naturalearthdata.com/downloads/10m-physical-vectors/)
 - [Natural Earth terms of use](https://www.naturalearthdata.com/about/terms-of-use/)

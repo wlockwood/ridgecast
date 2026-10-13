@@ -35,11 +35,14 @@ when you need a guided tour of the interface.
 
 - [Install and run RidgeCast](how-to/install-and-run.md)
 - [Create and configure a network](how-to/create-and-configure-a-network.md)
+- [Navigate and edit on the map](how-to/navigate-and-edit-on-the-map.md)
+- [Configure network nodes](how-to/configure-network-nodes.md)
 - [Propose a repeater chain](how-to/plan-a-repeater-chain.md)
 - [Import a Radio Mobile network](how-to/import-radio-mobile-network.md)
 - [Evaluate a radio link](how-to/evaluate-a-radio-link.md)
 - [Generate and export a coverage map](how-to/generate-and-export-coverage.md)
 - [Find and validate a candidate site](how-to/find-and-validate-a-site.md)
+- [Benchmark this computer for calculation estimates](how-to/benchmark-this-computer.md)
 - [Analyze network resilience](how-to/analyze-network-resilience.md)
 - [Use FCC amateur-license data](how-to/use-fcc-amateur-data.md)
 - [Work offline and manage cached data](how-to/work-offline-and-manage-caches.md)
@@ -60,10 +63,15 @@ Use these pages while working in the application.
 - [Shortnames](reference/shortnames.md)
 - [Propagation settings](reference/propagation-settings.md)
 - [Optional scientific CPU models](reference/scientific-models.md)
+- [Performance, optimizations and measured differences](reference/performance.md)
+- [Mixed CPU and GPU benchmark experiment](reference/mixed-device-benchmark.md)
+- [Mixed-device development-computer results](reference/mixed-device-qualification.md)
+- [Fast Site Finder compute benchmark](reference/site-finder-fast-benchmark.md)
 - [Co-channel interference scenarios](reference/interference-scenarios.md)
 - [Coverage modes](reference/coverage-modes.md)
 - [Network-analysis commands](reference/network-analysis.md)
 - [Files and interchange formats](reference/files-and-formats.md)
+- [Import formats and limits](reference/import-formats.md)
 - [Data sources and caches](reference/data-sources-and-caches.md)
 - [Natural Earth water mask provenance](reference/water-mask-provenance.md)
 - [Glossary](glossary.md)
@@ -82,6 +90,8 @@ These conceptual guides explain what RidgeCast computes and why.
 - [Network analysis](concepts/network-analysis.md)
 - [Propagation model decisions](propagation-model-decisions.md) — engineering
   rationale and implementation history for maintainers.
+- [Application concurrency](concepts/app-concurrency.md) — save queue, crash
+  recovery, and background-cache patterns for contributors.
 
 ## Project documentation
 

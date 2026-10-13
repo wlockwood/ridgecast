@@ -43,6 +43,11 @@ the same commands remain in **View**.
 
 ## Floating windows
 
+**Settings → Performance & Calibration…** and **Tools → Benchmark this computer…**
+open the [computer benchmark](../how-to/benchmark-this-computer.md). If calculations
+are running, it names the blocking work and offers **Show calculation progress**
+or **Show Site Finder**. Start becomes available when that work finishes.
+
 Floating windows grow and shrink vertically as sections open, results appear,
 or controls are hidden. Drag their side edges to adjust width. Scrolling begins
 when the contents exceed the available application-window height. Dialogs with
@@ -60,7 +65,7 @@ own viewports.
 | Lasso-select | Hold **Control** and drag a freeform region |
 | Append with the lasso | Hold **Control+Shift** and drag |
 | Move a node | **Shift-drag** the node |
-| Edit a node | Double-click the node |
+| Edit a node or nodes | Double-click the node, choose **Edit selected…**, or pick **Edit → Node Editor Guide**; see [Configure network nodes](../how-to/configure-network-nodes.md) |
 | Clear the selection | Click empty map space |
 | Replace selection with all non-hidden nodes, including offscreen nodes | **Control+A** |
 | Replace selection with non-hidden nodes inside the map view | **Control+Shift+A** |
@@ -127,6 +132,8 @@ result.
 | Add Node at Coordinates | **Edit → Add Node at Coordinates…** | Create a single node at specific latitude and longitude coordinates in decimal degrees or degrees-minutes-seconds (DMS) markup (e.g. `45°57'10.00"N 123°56'18.73"W`), with or without hemisphere indicators. |
 | Bulk Add Nodes | **Edit → Bulk Add Nodes by Coordinates…** | Extract multiple fully configured nodes from pasted text, spreadsheets, or logs using [tag patterns](#bulk-add-tags) (e.g. `$lat, $long`) or regex. |
 | Multi-Point Ruler | Empty map right-click context menu | Measure multi-point distances and view an interactive terrain elevation profile along the measured line (**Start Ruler Here**, **Add Ruler Point Here**, **Show Ruler Profile**, and **Clear Ruler**). Drag anchor points to adjust or double-click empty map space to extend. |
+| Independent Paths | **View → Independent Paths for Two Selected Nodes**, or right-click two selected nodes → **Show Independent Paths** | Draw up to three routes between two nodes that share no intermediate node; see [Independent paths](map-views.md#independent-paths). Clear a pinned pair from the map's right-click menu. |
+| Main Viewport Guide | Map header **Guide** button, **Help → Main Viewport Guide**, or **View → Main Viewport Guide** | Open secondary, nonmodal help explaining map navigation, multi-selection, Shift-dragging, lasso, and shortcuts. See [Navigate and edit on the map](../how-to/navigate-and-edit-on-the-map.md). |
 | Tile Manager Mode | **Tools → Tile Manager Mode** | Inspect, select, and remove cached terrain, land-cover, and surface tiles on the map. |
 | Site Finder | **Analysis → Planning → Site Finder** | Rank candidate radio locations in the visible area. |
 | Advanced Search | **Control+F** | Search locations, FCC records, coordinates, or RidgeCast nodes. |
@@ -157,21 +164,30 @@ license information is linked from the repository README.
 
 Enable **Terrain overlay** in the map settings panel to shade the loaded terrain.
 Oceans and lakes show the basemap through in every terrain style, including
-contours. Water is identified from a bundled worldwide ocean/lake mask, refined
-by cached NLCD land-cover classes where available. No extra downloads are needed.
+contours. While online, detailed regional water polygons download in the
+background and persist for offline reuse. They preserve island holes; fractional
+shoreline transparency smooths pixel edges without inventing source detail.
+A valid regional tile containing no water keeps land visible.
+
+At overview zooms below 6, RidgeCast uses bundled Natural Earth polygons.
+Zooming beyond the regional source's published detail limit reuses its parent
+tile. Missing regional data falls back to available cached land-cover classes
+and the bundled mask. **Work Offline**, download pause and cancel apply to water
+requests. Cached water belongs to the **Map tiles** budget and clear action.
 
 Transparency uses water classification, not an elevation threshold: land below
 sea level remains visible, and lakes above sea level are transparent. Elevations
-used for links, coverage, and terrain profiles stay unchanged. Contour lines
+used for links, coverage, and terrain profiles stay unchanged. Contours are off
+by default; only enabled intervals are drawn. Contour lines
 are drawn about 1.5 pixels wide whatever the slope, so gentle valley floors get
 a thin line rather than a wide black band, and level ground has no line. When an
 interval's lines would sit only a few pixels apart on steep ground, that
 interval fades out; enable a wider interval (such as 100 m) to keep lines there.
 
-The global mask uses [Natural Earth's 1:10 million polygons](https://www.naturalearthdata.com/downloads/10m-physical-vectors/).
-Its shorelines are generalized; small ponds, narrow rivers, and tiny islands may
-be absent where finer cached land-cover data is unavailable. Newly loaded
-land-cover data refreshes the terrain overlay automatically.
+The fallback uses [Natural Earth's 1:10 million polygons](https://www.naturalearthdata.com/downloads/10m-physical-vectors/).
+Its generalized shorelines can omit small ponds, narrow rivers and tiny islands.
+Loaded regional or land-cover data refreshes the terrain overlay automatically.
+See [water sources and attribution](water-mask-provenance.md).
 
 ## Coordinate entry
 
@@ -445,3 +461,11 @@ RidgeCast uses a shared in-window menu bar: those shortcut substitutions do not
 make it a native macOS menu layout. Native **Alt+letter** menu access keys are
 also unavailable. The layout therefore adopts desktop conventions selectively;
 the controls documented above describe the behavior you can rely on.
+
+## Link Profile workbench
+
+Open **Show Link Profile** from a link's context menu. A remains left and B remains right when selecting either direction's budget. The persistent legend toggles drawing layers; **View…** changes Earth projection and equal scale, and **Fit path** resets pan/zoom. **Inspector** exposes **Path**, **Heights**, and **Inputs**, with scrolling below the plot on narrow windows.
+
+Click the plot or edit **Sample** to inspect physical elevations and clearance; **Go to limiting obstruction** selects the smallest signed gap below the 60% boundary. **Heights** searches the retained path in finite steps, previews a proposal, and applies the request-owned nodes only. **Control+Z** undoes application. Missing noise leaves margin Unknown and clearance solving available. **Refresh profile** creates new retained inputs; prior results are read-only while refreshing. **Cancel preparation**, **Cancel search**, and **Close** reject their late worker results. **Export… → Copy profile CSV** preserves physical elevations and separately names the projection-dependent `drawn_ground_m`. **Guide** opens help; its auto-show setting persists.
+
+See [Evaluate a radio link](../how-to/evaluate-a-radio-link.md) for references, model limitations, and the complete workflow.

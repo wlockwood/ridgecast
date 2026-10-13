@@ -665,6 +665,179 @@ diagnostic return ratio.
   much more than 0.6 m from one vertex to the next. The same argument covers the
   one-percent density step.
 
+## LiDAR cache and build internals (for maintainers)
+
+Source: `src/engine/itm_dsm.rs`, `src/engine/lidar/`. Numbers here are the
+constants in the code today.
+
+### Stores and keys
+
+The LiDAR caches live under `<cache root>/lidar/` in three stores:
+
+| Store | Holds | Key |
+| --- | --- | --- |
+| `catalog/` | resolved EPT acquisition sets, one `<key>.json` each | digest of `catalog3`, `GEOMETRY_ALGORITHM_VERSION`, provider, the required geometry (terminals, corridor width, spans) or footprints, and the snapped context |
+| `surfaces/` | prepared surfaces, one directory per key | `itm-v<ALGORITHM_VERSION>-<digest>` |
+| `tiles/` | raw provider point-cloud tiles (`<digest of dataset URL>/<depth-x-y-z>.laz`) and the dataset header and hierarchy documents (`index/<name>.json`) | dataset base URL, tile key |
+
+All three are prepared before a new cache root is activated. File names that
+come from downloaded manifests are restricted (tile keys to digits and `-`,
+document names to 64 letters, digits and `-`) so a hostile manifest cannot
+escape the store.
+
+A **surface key** is derived from the *ground a surface covers*, not from the
+request that asked for it: the prepared outline rings are canonicalised
+(rotated to the smallest vertex, the smaller direction taken, seven decimal
+places of degrees, rings sorted), then hashed with the entry format, the
+geometry and material-map versions, the DSM provider, and the DSM resolution.
+Two nodes inside one land-cover component therefore share one entry. (Before
+this, one node accumulated 22 byte-identical surfaces.) Transmit power,
+sensitivity, loss and antenna gain are deliberately absent: they are cheap
+link-budget arithmetic and must not trigger a re-download.
+
+Raw tiles are kept separately because a node blob, its neighbour and the link
+between them are different surfaces cut from the same provider tiles. A cached
+tile is capped at 512 MiB encoded, protected by 64 striped locks, and
+invalidated only if its SHA-256 still equals the one the failed decoder saw, so
+a late decoder cannot delete a newer replacement.
+
+### Version numbers and what each invalidates
+
+| Constant | Value | Bump when | Effect |
+| --- | --- | --- | --- |
+| `GEOMETRY_ALGORITHM_VERSION` | 3 | DSM/DTM/mesh construction changes | every surface key and catalog key changes |
+| `MATERIAL_MAP_VERSION` | 1 | the class-to-material table changes | surface keys change |
+| `ALGORITHM_VERSION` | 8 | the *stored* surface changes | surface directory name changes; also in the coverage cache key |
+| `SURFACE_FORMAT` | 6 | the directory layout changes | manifests with another format are misses; raw tiles stay reusable |
+| `COMPOSITION_VERSION` | 9 | how rasters become a clutter profile changes | coverage cache key only; surfaces are untouched |
+
+`COMPOSITION_VERSION` is separate because changing how a profile summarises an
+interval changes every propagation result while the surfaces stay valid.
+
+### Surface directory and publish protocol
+
+A prepared surface is a directory `surfaces/<key>/` containing `surface.json`
+(the manifest, at most 64 MiB) and one set of planes per acquisition tile:
+
+- `g<pid>-<n>-obs-<i>-<tile>.tif` — height above ground, one byte per cell;
+- `…-gnd-….tif` — bare ground decimated by 8 (`GROUND_DECIMATION`);
+- `…-den-….tif` — diagnostic return density;
+- `…-sup-….bin` — the support sidecar (below).
+
+The manifest lists every file name, the frame origin and bearing, resolution,
+bounds, the coverage ring actually prepared, the selection identity
+(`product_identity`), the preparation report and the support summary. File
+names read from a manifest must be 1 to 199 characters of letters, digits, `-`
+and `.`. A manifest is also rejected unless it lists the same number of
+support, obstruction and ground planes.
+
+Publication never edits a visible generation:
+
+1. The build writes everything into a private staging directory
+   `.<key>.tmp-<pid>-<n>`, with plane names unique to the build, and the
+   manifest last.
+2. The staged directory is loaded and validated as if it were a reader.
+3. Under the write side of a process-wide publication lock, the planes are
+   renamed into the live directory (a name collision aborts), then the manifest
+   is written through a temporary file, synced, checked for cancellation, and
+   renamed. **The manifest rename is the commit point.**
+4. Only then are planes the old manifest alone referenced deleted. Readers hold
+   the read side of the lock, and decoded surfaces own their bytes, so none sees
+   a half-published generation. An interrupted publish leaves the previous
+   generation intact.
+
+An incomplete refresh (catalog or sources incomplete) is refused if the existing
+generation has any usable cells, so a worse result never replaces a useful one.
+
+### Node budget, relaxation, and EPT depth
+
+Each request or acquisition chooses an octree depth from the DSM cell size:
+the smallest depth whose nominal point spacing resolves the cell
+(`ceil(log2(root spacing / resolution))`, at most 21). It then walks the
+hierarchy and stops as soon as more than **4,096 nodes** would be needed. When
+that happens it tries one level shallower, repeatedly, for up to
+**3 levels** (`MAX_DEPTH_RELAXATION`). Each level doubles the spacing and
+quarters the node count, so three levels buys a 64-fold larger area. If the
+walk still exceeds 4,096 nodes at the floor, preparation fails with advice to
+reduce the surface context or shorten the link. A successful relaxation is
+recorded (`NodeBudgetFallback`: requested and selected depth, node counts,
+approximate source spacing) and is shown in the plan before any download
+starts. Each request keeps its own depth and budget; combining requests for
+transport never changes any selection's detail.
+
+### The `RCSUPP01` support sidecar
+
+Each full-resolution cell has an eight-byte `CellSupport` record, stored in a
+`.bin` file: the eight-byte magic `RCSUPP01`; width and height as u64 LE; origin
+x, origin y and resolution as f64 LE (a 48-byte header); then the records in row
+order. The whole file is zstd-compressed. A record is:
+
+| Byte | Content |
+| --- | --- |
+| 0 | methods: bits 0–2 ground method (missing, classified observed/focal/bracketed, minimum-return observed/focal/bracketed, legacy), bits 3–4 surface method (missing, observed, focal), bit 5 failed source, bit 6 failed donor, bit 7 reserved zero |
+| 1 | direct surface returns, saturating at 255 |
+| 2 | direct ground returns, saturating at 255 |
+| 3 | immediate ground donor cells |
+| 4–5 | upper bound on distance to the ground returns, decimetres, u16 LE; `0xFFFF` unknown |
+| 6–7 | the same for the surface |
+
+Counts are provenance, not statistical confidence. Observed cells have returns
+and distance zero, inferred cells have no direct returns and a nonzero distance,
+and missing cells have neither; a record that contradicts this, sets the
+reserved bit, or uses the reserved surface method is rejected on read. The reader
+checks the sidecar against its paired obstruction grid rather than trusting its
+header, refuses a file larger than the expected size, and admits twice the
+payload plus 128 MiB of decoder slack before allocating.
+
+### Build memory admission
+
+One raster build may not hold more than **2 GiB** at once
+(`MAX_BUILD_BYTES`), whatever its caller allows. The check is made once, up
+front, for the peak: planes, support, interpolation scratch, a 32 MiB
+allowance for the native LAS/LAZ reader's metadata, a 128 MiB allowance for
+codec workspace, and a 64 KiB streaming chunk charged per encoded buffer
+(including the old allocation while a buffer grows). The calling calculation's
+already retained surfaces are subtracted first. A refusal is reported as
+"surface too large" and the cells stay on categorical clutter. Point decoding
+works in chunks of 4,096 accepted points.
+
+### GPU surface finishing
+
+The GPU stage fills gaps and interpolates (up to the maximum DTM gap span) on
+two f32 planes. It is **transactional**:
+
+- The crop must fit the device: no more than 256 MiB of device buffers (four
+  planes of eight bytes per cell plus a uniform), 128-invocation workgroups,
+  at least three storage buffers, and `u32` cell counts. Otherwise the crop
+  goes to the CPU (`Limits`).
+- **Precision envelope.** Elevations must be finite and within ±1024 m (plus
+  1 mm), so four compensated passes stay within 1 mm.
+- **CPU replay.** While the GPU runs, the CPU replays the same fill passes on
+  the decoded rasters (without decoding points again) to produce the exact
+  presence masks, reference elevations and the support evidence, which only the
+  CPU computes. The GPU readback is accepted only if its data/no-data masks
+  match the replay exactly and every height is within 1 mm of the replay's. A
+  cell whose GPU and CPU heights quantise to different 0.6 m obstruction bins
+  takes the CPU pair.
+- Any failure (unavailable, limits, precision, device error, a 30-second wait)
+  retries the crop on the CPU. A device error also disables the GPU compiler
+  for later crops. Cancellation is not retried.
+- Multi-acquisition or incomplete-catalog builds are forced to the CPU backend
+  when the backend setting is automatic.
+
+Backend selection from the calibration benchmark is described in
+[Performance, optimizations and measured differences](../reference/performance.md).
+
+### WorldCover publication (seqlock)
+
+Registered global land-cover (WorldCover) sources, rasters and tiles are three
+separate structures, swapped together under a publication mutex. A revision
+counter works like a seqlock: it is made odd before the swap and incremented to
+even after. `registered_source_fingerprint` returns `None` if the revision is
+odd (or changed mid-read), so a coverage run cannot compute a cache key from a
+half-published state and persist it. Missing configured rasters also prevent a
+fingerprint, so a result is never reused against payloads that were not loaded.
+
 ## Related reading
 
 - [`docs/propagation-model-decisions.md`](../propagation-model-decisions.md) —

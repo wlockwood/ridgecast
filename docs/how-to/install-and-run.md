@@ -48,7 +48,7 @@ beside the application. Manual portable installation remains available.
 
 ## Source prerequisites
 
-- Rust 1.93 or newer
+- Rust 1.95 or newer
 - Git
 - A C++17-capable compiler for the bundled ITM implementation
 - A desktop graphics environment with WebGPU support
@@ -79,7 +79,7 @@ rustup show active-toolchain
 git --version
 ```
 
-The Rust version must meet the 1.93 minimum. On Windows, the host/active native
+The Rust version must meet the 1.95 minimum. On Windows, the host/active native
 toolchain must use `pc-windows-msvc`, rather than `pc-windows-gnu`. In Visual
 Studio Installer, confirm **Desktop development with C++** includes the MSVC
 tools and a Windows SDK; see the official
