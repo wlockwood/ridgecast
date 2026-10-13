@@ -93,7 +93,8 @@ Complete cohort times and verified queue work determine the recommendation.
    Share the CPU budget across builds and inner work rather than creating a full
    thread pool for every tile. Keep GPU finishing opt-in unless matching
    full-path measurements justify it on the user's hardware.
-3. For Site Finder, follow the [matching-model experiment plan](../superpowers/plans/2026-10-08-site-finder-mixed-device.md).
+3. For Site Finder, compare the same Fast approximation across devices using the
+   [Fast Site Finder compute benchmark](site-finder-fast-benchmark.md).
    Do not mix full CPU ITM scores with the current GPU approximation.
 
 ## Evidence and validation
