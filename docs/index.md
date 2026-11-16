@@ -18,6 +18,8 @@ planning who are ready to learn the terminology in the tutorial and glossary.
 The project is under active development and has not reached a stable 1.0 file
 format or modeling API.
 
+Read the [0.4.0 release notes](releases/0.4.0.md) for changes since October 13, 2026.
+
 ![RidgeCast planning workspace with selected-site details in Network on the left, six synthetic sites on the map, and Coverage on the right](screenshots/planning-workspace.png)
 
 Synthetic example with illustrative saved link values. See the
@@ -30,6 +32,10 @@ radio profiles, and fade-margin controls.
   results in the right Coverage workbench, and map styling in a pinnable Layers
   drawer. See [planning workspace controls](reference/controls-and-shortcuts.md#planning-workspace).
   Floating dialogs fit their contents before scrolling; their width stays adjustable.
+
+- Open [companion guides](how-to/use-companion-guides.md) from workspace
+  panels and substantial tools for workflow help and model limits. New tool
+  guides are on demand, with independent optional auto-show preferences.
 
 - Register checked WGS84 bare-earth DEMs, aligned DSM/DTM surveys, and bounded
   ESA WorldCover categorical crops; prepare an explicit offline calculation task
@@ -45,6 +51,8 @@ radio profiles, and fade-margin controls.
   bar, and recover unsaved work from separate per-document snapshots. Protect
   edits when opening, replacing, or closing a document; see
   [saving and recovery](how-to/create-and-configure-a-network.md#save-and-recover-your-work).
+- Save and resume [partial link calculations](concepts/link-result-cache.md),
+  preserving below-margin results and pruning decisions separately from unknown pairs.
 - Preserve authored vector layers and undo coverage-control edits. Share
   [portable project bundles](reference/files-and-formats.md#portable-project-bundles)
   with referenced overlays and explicit model assumptions.
@@ -54,6 +62,13 @@ radio profiles, and fade-margin controls.
   Shift-drag node repositioning, freeform lasso and multi-selection, Multi-Point
   Ruler with terrain elevation profiles, customizable Layers drawer, and a
   dismissible nonmodal Companion Guide.
+- Keep selected-node links above other links and customize each link view's
+  colors and mode-specific filters in [Link View Settings](reference/link-view-settings.md),
+  with an on-demand Guide, live examples, and documented scoring formulas.
+  Fortuity defaults to 1–500 miles with at least 0 dB fade margin.
+- Shortlist [connectivity opportunities](concepts/connectivity-priorities.md)
+  with cycle-safe Connectivity Potential link colors and Harmonic Connectivity
+  node colors/list sorting, calculated in the background.
 - Inspect [Link Profile](how-to/evaluate-a-radio-link.md) with persistent line/class legends, A/B mounting references, retained directional budgets and source details, sample selection, and previewed undoable finite-step height proposals.
 - Evaluate directional links with terrain profiles, Fresnel clearance,
   persistent network results that reuse unchanged terrain/LiDAR evaluations,
@@ -62,9 +77,25 @@ radio profiles, and fade-margin controls.
   path loss, link budgets, modeled noise floors, and optional measured LiDAR
   surfaces, with cancellable background preparation and visible measured,
   partial, or categorical status for individual profiles and height solves.
+  Default ITM network solves pre-screen candidate links using both endpoint
+  elevations and a 50 m allowance above each actual antenna mounting height.
+  LiDAR corridor downloads also pass bare-earth ITM screening in both directions
+  at the final solve's terrain spacing; uncertain terrain and surface mounts
+  retain their requests. See [LiDAR preparation](concepts/clutter-and-lidar.md#4-getting-lidar-from-a-national-archive-onto-one-link).
   [LiDAR ground policies](concepts/clutter-and-lidar.md#choosing-how-much-ground-evidence-to-require)
   retain observed/inferred support, offer conservative categorical fallback,
   and preserve an explicit legacy minimum-return estimator.
+  Configure LiDAR scopes and extraction settings in **Terrain & Geodata Settings**.
+  Browse national and state sources in the [editable LiDAR catalog](reference/lidar-source-catalog.md),
+  select EPT/COPC/LAS point clouds or numerical surface rasters, and configure
+  equivalent delivery mirrors that share independent requests across healthy backends.
+  STAC and state-service discovery preserve survey
+  identity and matching ground references; shared point payloads and prepared
+  clutter crops are cached across links and subsequent network loads.
+  Indexed local storage accounting, individual tile progress and bounded provider
+  retries keep [LiDAR retrieval observable](data-and-caching.md#8-the-downloads-window).
+  [LiDAR preparation](reference/performance.md#stream-and-overlap-lidar-builds-within-a-memory-budget)
+  shares all available CPU workers and sizes concurrent jobs and decode blocks to the configured RAM allowance.
 - Configure explicit ITM ground/climate/polarization and confidence/reliability
   targets; apply optional vertical RF taper or import measured separable antenna
   cuts. See [Antenna responses](reference/nodes-and-systems.md#optional-vertical-response-and-measured-cuts).
@@ -80,6 +111,10 @@ radio profiles, and fade-margin controls.
   choice of smooth colors or distinct quality bands. Plan required data across
   the evaluation footprint and calculate ready nodes while other downloads
   continue, with progress that distinguishes data waits from calculations.
+  Group sites sharing terrain tiles and bound preparation ahead of calculations
+  to reduce cache churn on large selections.
+  [Decode terrain blocks as needed](reference/terrain-subtile-access.md),
+  with bounded circle/corridor preparation and complete sampled path profiles.
 - Compare a transmitter's coverage at different antenna heights, show gained
   and lost areas with a height chart, or export an animated GIF.
 - Restore saved coverage selections across sessions and reuse completed per-node
@@ -132,6 +167,10 @@ radio profiles, and fade-margin controls.
   calculation data for reuse and offline work. Select a geographic region to
   prefetch terrain and land cover and inspect its cache availability before
   disconnecting.
+  Automatically size decoded terrain and surface retention from system RAM,
+  or choose a manual budget in Terrain & Geodata Settings.
+  Network link workers honor that allowance and share validated decoded terrain
+  with the map to avoid decoding the same cached raster again.
   Test individual terrain and population sources in Mirror Preferences with
   fresh sample downloads that stop after the first valid raster.
 - Show the basemap through oceans and lakes in the terrain overlay, using
@@ -166,7 +205,8 @@ requested signed-release discovery and explicit installation when a trusted key
 is pinned into the build. See [package installation and updates](how-to/install-and-run.md).
 
 Building from source requires Rust 1.95 or
-newer, Git, a C++17 compiler, and a desktop graphics environment with WebGPU
+newer, Git, a C++17 compiler, libclang for generating the bundled LERC decoder
+bindings, and a desktop graphics environment with WebGPU
 support.
 
 First download or clone this repository, then open a terminal in its top-level

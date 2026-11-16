@@ -37,6 +37,7 @@ when you need a guided tour of the interface.
 - [Create and configure a network](how-to/create-and-configure-a-network.md)
 - [Navigate and edit on the map](how-to/navigate-and-edit-on-the-map.md)
 - [Configure network nodes](how-to/configure-network-nodes.md)
+- [Use the in-app companion guides](how-to/use-companion-guides.md)
 - [Propose a repeater chain](how-to/plan-a-repeater-chain.md)
 - [Import a Radio Mobile network](how-to/import-radio-mobile-network.md)
 - [Evaluate a radio link](how-to/evaluate-a-radio-link.md)
@@ -60,6 +61,9 @@ Use these pages while working in the application.
 - [Display units](reference/display-units.md)
 - [Nodes and systems](reference/nodes-and-systems.md)
 - [Map views](reference/map-views.md)
+- [Link View Settings: controls, defaults, and formulas](reference/link-view-settings.md)
+- [Connectivity and construction priorities](concepts/connectivity-priorities.md)
+- [Partial link results in network files](concepts/link-result-cache.md)
 - [Shortnames](reference/shortnames.md)
 - [Propagation settings](reference/propagation-settings.md)
 - [Optional scientific CPU models](reference/scientific-models.md)
@@ -73,6 +77,8 @@ Use these pages while working in the application.
 - [Files and interchange formats](reference/files-and-formats.md)
 - [Import formats and limits](reference/import-formats.md)
 - [Data sources and caches](reference/data-sources-and-caches.md)
+- [Editable LiDAR source catalog and JSON schema](reference/lidar-source-catalog.md)
+- [Terrain blocks, circles and profiles](reference/terrain-subtile-access.md)
 - [Natural Earth water mask provenance](reference/water-mask-provenance.md)
 - [Glossary](glossary.md)
 - [Model limitations](reference/model-limitations.md)
@@ -95,6 +101,7 @@ These conceptual guides explain what RidgeCast computes and why.
 
 ## Project documentation
 
+- [RidgeCast 0.4.0 release notes](releases/0.4.0.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Security policy](../SECURITY.md)
 - [Threat model](security/THREAT_MODEL.md)

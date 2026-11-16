@@ -231,8 +231,13 @@ point with what it hit, using a standard scheme: class 2 is bare earth, class 9
 is water, classes 3–5 are vegetation by height, class 6 is buildings, and classes
 7 and 18 mark noise — birds, cloud reflections, and stray points below ground.
 
-RidgeCast uses USGS 3DEP and NOAA coastal acquisitions, and decodes the files
-natively in Rust — there is no PDAL, LAStools, or Python environment to install.
+RidgeCast reads national and state acquisitions through its built-in numerical
+readers; no PDAL, LAStools or Python environment is required. The
+[source catalog](../reference/lidar-source-catalog.md) includes point clouds and
+compiled clutter rasters. Point classifications and return counts are retained
+when supplied; raster products do not acquire invented point evidence. A
+surface raster is paired with verified matching ground to derive relative
+clutter height, while an already-normalized height raster needs no such pair.
 
 Withheld returns, noise classes 7 and 18, and invalid coordinates or elevations
 are excluded before reconstruction and return-density counts. Synthetic and
@@ -246,9 +251,12 @@ the rest.
 
 ### Two gates, before anything is fetched
 
-**Gate one: could this link work at all?** Clutter only ever *adds* loss. A pair
-that already fails over bare terrain cannot be rescued by anything a survey would
-reveal, so it is dropped before it becomes a download.
+**Gate one: could this link work at all?** At fixed antenna elevations, clutter
+only ever *adds* loss. Network link planning runs bare-earth ITM with the captured
+environment settings and the final solve's terrain spacing (about 30 m, bounded
+to 10–600 samples). It skips a corridor only if both directions fail with 6 dB
+of safety margin. Missing terrain and surface-relative antennas retain their
+requests: a measured roof or canopy can raise a surface-mounted antenna.
 
 **Gate two: which stretches could actually matter?** A long link only exists
 between two nodes that are already high, which means most of its path is far
@@ -310,7 +318,7 @@ areas from a few dozen shared source files.
 
 ### Output grid and source detail
 
-A **1 m DSM grid** means one output cell per metre. It does not guarantee that
+A **1 m LiDAR grid** means one output cell per metre. It does not guarantee that
 LiDAR returns are spaced one metre apart. RidgeCast chooses the EPT hierarchy
 level in ground metres, converting geographic degrees, correcting Web Mercator
 for the scene latitude, and accounting for UTM scale. Turning a link does not
@@ -422,7 +430,7 @@ categorical heights regardless of LiDAR evidence.
 
 Existing saved configurations with an explicit `itm_dsm` object but no
 `ground_policy` preserve **Legacy minimum return v1**. Configurations without
-that object keep both DSM scopes disabled and get the new conservative policy
+that object keep both LiDAR scopes disabled and get the new conservative policy
 if enabled later. Saving writes `conservative_v1` or
 `legacy_minimum_return_v1` explicitly. Changing policy changes predictions and
 their cache identity without rebuilding point clouds or support rasters;
@@ -451,8 +459,8 @@ The dialog shows each configured cache limit beside the estimate. If either
 working set is much larger than its limit, a warning also appears in the status
 bar. Point-cloud eviction can force repeated downloads and may prevent a run
 from finishing; surface eviction can force rebuilding in later calculations.
-Cancel the run, then raise the relevant LiDAR cache limit or reduce the area or
-DSM resolution before trying again.
+Cancel the run, then raise the relevant LiDAR cache limit, reduce the area, or
+use a coarser LiDAR cell size before trying again.
 
 Storing two floating-point surfaces per cell was extravagant, and only their
 difference was ever read. RidgeCast stores the height above ground directly, as
@@ -689,7 +697,7 @@ A **surface key** is derived from the *ground a surface covers*, not from the
 request that asked for it: the prepared outline rings are canonicalised
 (rotated to the smallest vertex, the smaller direction taken, seven decimal
 places of degrees, rings sorted), then hashed with the entry format, the
-geometry and material-map versions, the DSM provider, and the DSM resolution.
+geometry and material-map versions, the LiDAR provider, and the LiDAR cell size.
 Two nodes inside one land-cover component therefore share one entry. (Before
 this, one node accumulated 22 byte-identical surfaces.) Transmit power,
 sensitivity, loss and antenna gain are deliberately absent: they are cheap
@@ -751,7 +759,7 @@ generation has any usable cells, so a worse result never replaces a useful one.
 
 ### Node budget, relaxation, and EPT depth
 
-Each request or acquisition chooses an octree depth from the DSM cell size:
+Each request or acquisition chooses an octree depth from the LiDAR cell size:
 the smallest depth whose nominal point spacing resolves the cell
 (`ceil(log2(root spacing / resolution))`, at most 21). It then walks the
 hierarchy and stops as soon as more than **4,096 nodes** would be needed. When

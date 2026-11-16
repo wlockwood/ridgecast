@@ -73,14 +73,29 @@ change.
 
 The right panel lists all nodes, including hidden and disabled nodes. Its sort
 drop-down offers alphabetical name, qualifying link count, cached terrain
-elevation, **Site score (area)**, and **Site score (population)**. The two
-site-score sorts rank sites best first by their Site Finder score, weighted by
-covered land area or by covered population respectively. Scores are computed in
-the background the first time a score sort is chosen and reused until a site or
-a Site Finder setting changes; the list is re-sorted once scoring finishes, and
-unscored sites sit at the bottom until then. Select a row to show its details; Ctrl-click extends the
-selection, double-click centers the map, and right-click opens node actions.
-Click the blank space beneath the list to clear the selection.
+elevation, **Harmonic connectivity**, **Site score (area)**, and
+**Site score (population)**.
+
+**Harmonic connectivity** lists the best-connected radios first. A radio's score
+adds up one contribution from every other radio it can reach through a chain of
+links, where a *hop* is one link in that chain. A radio one hop away adds 1, one
+two hops away adds 1/2, one three hops away adds 1/3, and so on, so many nearby
+neighbors score highest. Only two-way links count, meaning both directions meet
+the global SNR threshold. Scores are computed in the background and are
+recalculated, re-sorting the list, when the network or that threshold changes.
+Disabled, hidden, and marker nodes sort after the scored radios. See
+[Node Harmonic Connectivity](../concepts/connectivity-priorities.md#node-harmonic-connectivity)
+for the full definition.
+
+The two site-score sorts rank sites best first by their Site Finder score,
+weighted by covered land area or by covered population respectively. Scores are
+computed in the background the first time a score sort is chosen and reused
+until a site or a Site Finder setting changes; the list is re-sorted once
+scoring finishes, and unscored sites sit at the bottom until then.
+
+Select a row to show its details; Ctrl-click extends the selection,
+double-click centers the map, and right-click opens node actions. Click the
+blank space beneath the list to clear the selection.
 
 Node ordering and the selected nodes' viable-link rows update in the background.
 While a changed network, sort, threshold, or terrain source is being prepared,

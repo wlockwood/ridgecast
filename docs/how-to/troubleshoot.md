@@ -48,11 +48,50 @@ locations; these are separate from the large cache root.
 ## Settings could not be saved
 
 If RidgeCast shows **Settings were not saved**, the named preferences are still
-active for this session but may be lost at restart. Check that the destination
-disk has space and that RidgeCast can write to it, then choose **Retry**. The
-retry saves the current settings. You can also choose **Dismiss** to close the
-message without retrying. Applying a new cache directory prepares that location
-in the background; the caches restart after it is ready.
+active for this session but may be lost at restart. The dialog explains the
+reported cause and shows the destination, failed operation, and original error
+(including the OS error code when available). Settings are written to a temporary
+file before replacing the destination, so a failed write leaves the previous
+file intact.
+
+Read the findings before choosing **Retry**:
+
+- **File lock:** save work in any other RidgeCast windows, close them, and retry.
+  Editors, sync tools, or antivirus scanners can also hold a file open. Another
+  running copy alone does not prove that it caused the failure. On Windows,
+  replacement of a locked file can report **Access denied**; the dialog also
+  checks for a sharing lock that currently blocks replacement. This check does
+  not modify the file or identify which program holds the lock.
+- **Disk space or quota:** free space on the destination drive or check your
+  account quota. The temporary copy needs space alongside the existing file.
+  Less than 10 MiB available is flagged as low space; a high percentage used does
+  not by itself explain why a small settings file could not be saved.
+- **Access denied or read-only destination:** check the file's read-only attribute,
+  folder permissions, and security software's blocked-app history. Replacement
+  requires access to the containing folder as well as the file.
+- **Unavailable destination or invalid path:** reconnect the drive or network
+  share. A folder where a settings file should be is also reported; back it up
+  and correct the path before retrying.
+- **Settings could not be prepared:** copy the diagnostic details when reporting
+  the problem; the failure may have happened before any file was written.
+
+On Windows, the dialog automatically checks file attributes, available space for
+your account on the destination volume, and other processes named `ridgecast.exe`
+or matching the current executable's name (excluding this process). Different
+renamed copies can be missed. Checks describe the state **after** the failure;
+space and locks may have changed. A failed or unsupported check is reported as
+unavailable, not as a clean result. Automatic disk-space and process checks are
+currently Windows-only. All checks run in the background without writing probe
+files or changing permissions.
+
+**Retry** saves the current settings and refreshes the findings if saving fails
+again. **Copy diagnostic details** copies the settings name, destination, checks,
+and original error; it does not copy settings contents. **Dismiss** closes the
+message without saving. The destination matters: some settings use the per-user
+configuration directory while others use the workspace. See
+[Data and caching](../data-and-caching.md#2-where-things-land) for locations.
+Applying a new cache directory prepares that location in the background; a
+failure keeps the previous location active.
 
 When repairing an unreadable cache-budget file, limits stay disabled until the
 save succeeds. A failed repair keeps both the proposed limits and the warning

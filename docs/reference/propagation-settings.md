@@ -30,30 +30,88 @@ The inspired model's stored P.1812 time percentage remains normalized to 50%.
 The complete model has independent genuine time/location settings. Expand
 **Complete P.1812 outdoor assumptions** to enter DN, N0, uniform radio-climatic zone,
 time/location percentages, polarization, prediction resolution and optional
-coast distances. Its selector remains disabled until required inputs validate.
+coast distances. Prediction resolution and coast distances follow your chosen
+[display units](display-units.md); coast distances are still stored in
+kilometers. Its selector remains disabled until required inputs validate.
 Missing terrain or required clutter makes a prediction unavailable. MCP
 `change_settings` accepts `propagation_model: "p1812_complete"` and a complete
 `p1812_complete` object; `describe_settings` reports the revision and inputs.
 
 ## Optional ITM measured surfaces
 
+Open **Settings → Terrain & Geodata Settings → LiDAR** for the LiDAR scopes,
+source, ground policy, grid spacing, node-area context, corridor width, and
+surface-cache status. These controls apply to ITM / Longley-Rice; select the
+propagation model and its environment inputs in **Application Preferences**.
+Moving the controls does not change saved settings or existing cache identities.
+
+**LiDAR clutter source** chooses a registered point-cloud or numerical raster route.
+**Browse LiDAR clutter sources** includes point clouds, regional programs and
+compiled surface/height products; standalone DEM/DTM products are hidden.
+The configured terrain provider supplies the bare-earth propagation profile;
+paired ground metadata is retained only where needed to derive clutter height.
+Filter by **State**, optionally including shared national feeds, or choose
+**National sources only** to hide state and regional collections. State entries
+can describe individual surveys or partial coverage. Each source shows its
+access, licensing, ground-pairing and integration requirements. Selecting a
+catalog entry for inspection does not change calculation inputs; **Use this
+source** applies an available route. Unavailable entries state the access or
+data requirement that remains. Prepared local surface/ground pairs can also be
+imported through the local-data window.
+
+**LiDAR delivery mirrors** distributes independent objects among healthy enabled
+endpoints for the selected dataset. Native EPT tiles prefer the least-busy backend
+and rotate equally busy backends. Other asset readers use stable object affinity,
+so callers sharing an object still share its transfer. It does not select a
+different survey or provider. Byte-range readers retain their successful mirror
+and source validator. A transient failure falls back to another enabled
+endpoint; provider cooldowns and per-backend limits still apply.
+
+General templates use `{url}` or full object `{path}`. Legacy USGS templates
+use `{dataset}` and `{path}`; NOAA templates use `{path}` relative to its bucket.
+Mirrors must expose identical objects. Changing a hostname preserves tile cache
+identity, and each acquisition keeps its captured endpoint list. AWS bucket
+aliases share capacity; the default USGS aliases alone do not provide independent
+bandwidth. Parallel speed gains require independent equivalent mirrors.
+
+The Downloads window keeps activity, timing and byte statistics in fixed columns
+as text changes. LiDAR batches summarize concurrent receiving, connecting or
+waiting requests, with receiving taking priority and a minimum 750 ms between
+changed summaries. Long text is truncated with its full value available on hover.
+A reserved idle line reports when no bytes have arrived for at least five seconds.
+
+See the [catalog format and extension guide](lidar-source-catalog.md) for the
+editable JSON sidecar, schema, state references and reload behavior.
+
 Both scopes are disabled by default.
 
 | Setting | Default | Valid range | Effect |
 | --- | ---: | ---: | --- |
-| DSM inside node land-cover blobs | Off | On/off | Replaces categorical height inside the bounded connected NLCD component containing each node. |
-| DSM along eligible links | Off | On/off | Replaces categorical height in a narrow corridor after the pair passes the free-space reachability gate. |
+| LiDAR inside node land-cover blobs | Off | On/off | Replaces categorical height inside the bounded connected NLCD component containing each node. |
+| LiDAR along eligible links | Off | On/off | Replaces categorical height in a narrow corridor after free-space and bare-earth ITM screening; see below. |
 | LiDAR ground policy | Conservative v1 for new settings | Conservative v1 / Legacy minimum return v1 | Requires bounded classified-ground support, or explicitly allows the earlier unclassified minimum-return estimator. |
-| LiDAR source | USGS 3DEP | USGS 3DEP or NOAA Digital Coast | Chooses the public point-cloud catalog. |
+| LiDAR clutter source | USGS 3DEP | Registered national/state point-cloud and numerical surface routes | Chooses clutter acquisition; the configured terrain source remains authoritative. |
 | Blob maximum range | 1,000 m | 30–1,000 m | Bounds a node's connected land-cover component. |
 | Link half-width | 3 m | 1–25 m | Sets the corridor width on each side of the link centerline. |
 | Surface context | 250 m | 25–500 m | Adds context around a node-blob envelope. |
-| DSM resolution | 1 m | 0.5–5 m | Sets the derived measured-surface raster resolution. |
+| LiDAR cell size | 1 m | 0.5–5 m | Sets the derived measured-surface raster resolution. |
 
 Measured data supplies obstruction height above ground. RidgeCast keeps the
 selected DEM authoritative for bare-earth elevation instead of splicing raw
 LiDAR elevations into it. Stored return-density ratios are diagnostic metadata;
 categorical land cover remains the attenuation-density input.
+
+Before network corridor downloads, bare-earth ITM uses the captured environment
+and the final link solve's terrain spacing (about 30 m, bounded to 10–600
+samples). Both directions must fail with 6 dB of safety margin to skip LiDAR.
+Missing terrain and surface-relative antennas keep their requests, since a
+measured mounting surface can raise the antenna elevation.
+
+The Downloads row groups whole compressed EPT point-cloud files, including
+points outside the narrow corridor that are discarded during processing. Its
+byte count is data transferred so far, not the size of the finished LiDAR grid.
+The batch has no known total byte count, so an ETA may be unavailable. Smaller
+LiDAR cells select finer source detail and can require more files and processing.
 
 Conservative v1 requires observed classified ground or classified inference
 within a 300 m inherited source-cell bound, and observed DSM or filling within
@@ -65,7 +123,7 @@ continue to older usable acquisitions before categorical fallback.
 
 Old saved explicit `itm_dsm` objects lacking `ground_policy` deserialize as
 `legacy_minimum_return_v1`, preserving their numeric behavior. An absent
-`itm_dsm` object keeps DSM disabled. New settings and newly enabled absent
+`itm_dsm` object keeps LiDAR disabled. New settings and newly enabled absent
 objects use `conservative_v1`. Saved policies are explicit; changing one
 invalidates prediction caches while reusing the same supported surface data.
 Old derived surfaces lacking support are rebuilt, with raw point clouds reused.

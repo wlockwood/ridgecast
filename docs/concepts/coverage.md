@@ -396,6 +396,8 @@ terrain, Planning LiDAR, Fetching LiDAR, Building surfaces, Sampling terrain,
 Solving coverage, and Assembling map. Steps can overlap: ready sites can prepare
 profiles and solve while terrain or LiDAR downloads for other sites continue.
 A step that has nothing to do is greyed rather than filled.
+Click the link or coverage status text or progress bar in the status bar at the
+bottom of the window to open it; hovering shows the step currently running.
 The overall status can show concurrent work, for example **Calculating (CPU) ·
 3 waiting for downloads**. When every unfinished site is waiting for data, it
 says **Waiting for downloads**. The CPU or GPU engine is named only while
@@ -526,7 +528,7 @@ raw bit patterns) of:
   resolution, algorithm, and mode (TX/RX);
 - the land-cover configuration;
 - the data fingerprint and the measured-surface revision;
-- the propagation model, P.1812 time percentage, ITM settings, ITM-DSM
+- the propagation model, P.1812 time percentage, ITM settings, LiDAR
   settings and its `ALGORITHM_VERSION` / `COMPOSITION_VERSION`, complete-P.1812
   settings when present, and the ambient-noise configuration. Receiver-noise
   fields join the key only when atmospheric noise is enabled, so older keys are

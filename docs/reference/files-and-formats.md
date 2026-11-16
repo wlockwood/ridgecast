@@ -2,6 +2,10 @@
 
 ## Project and configuration files
 
+Network saves include a versioned [partial link-result cache](../concepts/link-result-cache.md).
+Passing calculations, below-margin calculations, and pruning reasons remain
+distinct; missing directions are unknown. Matching partial caches resume on open.
+
 ### Measured antenna cuts
 
 Import UTF-8 CSV with this exact header and cut names:
@@ -170,6 +174,11 @@ RidgeCast imports KML, KMZ, GeoJSON, and GPX reference layers. Layers can be
 embedded in the project or retained as external file references. GeoJSON and KML
 coordinates outside geographic bounds are treated as possible EPSG:3857 Web
 Mercator coordinates and unprojected when valid.
+
+Map display geometry is prepared in the background and reused for an unchanged
+view. Dense views simplify subpixel segments and limit visible detail; zoom in
+when the map displays the dense-overlay notice. This does not alter imported,
+saved or exported geometry. Point labels are shortened for display only.
 
 An external reference on a network share, such as `\\server\share\roads.kml`,
 is not read when the network opens. Opening a file on a share sends your Windows

@@ -1,5 +1,9 @@
 # Create and configure a network
 
+Large network calculations can be saved before they finish. The project's
+[partial link cache](../concepts/link-result-cache.md) retains passing,
+below-margin, and pruned outcomes separately; unknown directions resume on open.
+
 Use this guide to build a RidgeCast network from manually placed sites.
 
 To start over, choose **File → New Network**. If the current network has unsaved
@@ -20,8 +24,9 @@ failed save keeps the current network open.
    decimal degrees or degrees-minutes-seconds format like `45°57'10.00"N 123°56'18.73"W`), or
    **Edit → Bulk Add Nodes by Coordinates** to extract multiple nodes from
    pasted text, logs, or coordinate lists using patterns or regular expressions.
-   Coordinate entry centers a single new node and shows its coverage range;
-   bulk entry fits the combined ranges of all nodes added in that batch.
+   Coordinate entry selects and centers the new node with nearby geographic
+   context; bulk entry selects and fits the positions of all newly added nodes.
+   Both retain enough surrounding terrain to orient yourself.
 5. Name the node, assign its system, set its height, and enter only the overrides
    that differ from the shared system.
 6. Repeat for the remaining sites.

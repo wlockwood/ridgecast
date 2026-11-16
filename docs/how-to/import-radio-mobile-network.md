@@ -6,6 +6,12 @@ import merges the imported nodes and system profiles into the open network,
 retaining any existing unrelated nodes while updating matching system profiles
 and reporting any node-name collisions (this merge can be undone via **Edit → Undo**).
 
+Validation completes before the import changes the open network. If any file or
+coordinate is invalid, existing sites, system profiles and calculated links stay
+as they were. A successful import that changes sites or radio profiles clears
+old link calculations. Profiles with colliding names receive distinct IDs,
+including when a source name already contains a disambiguating suffix.
+
 1. Keep the matching `_Unit.csv`, `_System.csv`, and `_NetData.csv` files in the
    same directory. Their text before the suffix must match: for example,
    `maplenet_Unit.csv`, `maplenet_System.csv`, and `maplenet_NetData.csv` form

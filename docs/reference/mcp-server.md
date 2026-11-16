@@ -75,6 +75,14 @@ Every path and directory argument passed to any tool is validated against a shar
 
 ## Sessions
 
+GIS, coverage and gap exports validate their final filenames as well as the
+output folder, including GeoTIFF `.tfw` sidecars. Existing symbolic-link
+destinations are refused. Replacing a hard-linked filename replaces that entry
+without changing its other aliases. With `overwrite: false`, publication refuses
+a destination created by another writer after the initial check. These exports
+stage all outputs and roll back earlier publications after an ordinary error;
+publication is atomic per file, rather than across the whole set after a crash.
+
 A session is one network held in memory, addressed by an opaque handle.
 
 - **Nothing is opened implicitly.** There is no equivalent of the application's

@@ -12,6 +12,12 @@ reverse direction.
 
 ## Calculate coverage
 
+The right-side Coverage pane's **Propagation…**, **Frequency…**, **Clutter…**,
+**Thresholds…**, **Layer appearance…**, and **Benchmark…** buttons toggle their
+windows: click once to open, then again to close. A highlighted button means its
+window is open. **Guide** also toggles the Coverage guide; closing it this way
+leaves its saved auto-show preference unchanged.
+
 1. Select the radio nodes to evaluate. Use **Ctrl+A** to select all nodes;
    an empty selection clears the displayed coverage. Changing the selection
    starts or updates the background calculation automatically.
@@ -39,7 +45,15 @@ then check that a radio node is selected and that its range and Test Node are
 configured.
 
 On a first run, RidgeCast queues missing terrain, land-cover, and enabled LiDAR
-data for the full evaluation area. Overlapping sites share tile requests. Sites
+data for the full evaluation area. Overlapping sites share tile requests. Coverage
+uses a cache-aware processing order: sites that reuse resident terrain or share
+tiles are grouped together, even when they were selected in a different order.
+Terrain and land-cover preparation advances through a limited group of sites,
+refilling it as calculations finish, so distant sites do not all load their tiles
+ahead of the current calculation. This reduces repeated decoding when the full
+selection exceeds the cache allowance; it does not guarantee an optimal order
+or make a single site's oversized footprint fit. The existing large-run warning
+still applies. Sites
 with ready inputs calculate while other sites' downloads continue, so the status
 may show **Calculating (CPU) · 3 waiting for downloads**. **Waiting for downloads**
 means data has not arrived, **Queued** means a site is ready for a worker, and
@@ -110,11 +124,26 @@ and result. Canceled jobs do not copy a newly rendered image to the clipboard.
 1. Position and zoom the map to the desired geographic viewport. Use **Fit to Evaluation Range** (in the export dialog, in the map’s **Fit** menu, or under **View**) to zoom and pan the viewport to exactly fit the evaluation range of coverage nodes. Use **Fit to Visible Coverage** to zoom and pan the view to exactly fit all visible hexels of coverage according to the fade margin settings.
 2. Choose **File → Export → Coverage Image…**.
 3. Select an output resolution multiplier (**1x**, **2x**, **4x**, or **8x**).
-4. Optionally toggle **Show links** to draw calculated directional network links
-   over the coverage. Links use the current link color mode and fade-margin
-   filter; links to hidden sites are omitted. If links are hidden under **View**,
-   this option still draws them in fade-margin colors. Links crossing the image
-   are included even when their sites are outside it.
+4. Optionally toggle **Show links** to draw the calculated links between sites
+   over the coverage, colored the way they are on the map:
+   - The link colors and the distance and minimum fade-margin filters are the
+     ones set in **View → Links → Link View Settings…** for the current link
+     view, together with the map's global minimum SNR. Raising a filter on the
+     map therefore removes those links from the image too. See
+     [Map views](../reference/map-views.md) for what each setting controls.
+   - Links that touch a site you have hidden are left out. Links that touch the
+     currently selected sites are drawn last, so they sit on top.
+   - A link is drawn if it crosses the image, even when both of its sites are
+     outside it.
+   - If the map's link view is **Hidden**, **Show links** still draws links, using
+     the **Fade Margin** section of Link View Settings.
+   - In the **Connectivity Potential** link view, the colors come from scores
+     calculated in the background (see
+     [connectivity priorities](../concepts/connectivity-priorities.md)).
+     **Export...** stays unavailable, with a "Waiting for connectivity
+     potential" message, until they are ready. If the scores change while you
+     are choosing where to save, the export does not start; wait for the scores
+     and export again.
 5. Optionally toggle **Include site markers** to draw site dots with owner/status colors.
 6. Optionally toggle **Include site labels** to draw site name labels below each marker, matching the active name mode (**Full Names** or **Short Names** configured under **View**).
 7. Optionally toggle **Include site legend** to caption sites with their

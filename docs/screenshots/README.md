@@ -1,9 +1,9 @@
 # RidgeCast screenshot checklist
 
-**Status:** Five actual desktop captures, refreshed October 4, 2026, are
+**Status:** Six actual desktop captures, refreshed November 2, 2026, are
 included in [the visual tour](../visual-tour.md): the planning workspace,
 pinned Layers drawer, site editor, Fade Margin Settings, and Radio Systems
-Manager. Unchecked items below are future gallery suggestions, not existing
+Manager, plus the Coverage companion guide. Unchecked items below are future gallery suggestions, not existing
 illustrations.
 
 The network overview now uses `planning-workspace.png`, a native capture of the
@@ -16,7 +16,7 @@ The included captures use one synthetic six-site demonstration network with
 illustrative saved link values, offline mode, and a plain basemap. They contain
 no personal network data, amateur-license records, or calculated coverage
 overlay. The images show the real interface with isolated configuration;
-their link colors do not validate an RF prediction. All five are 1440 × 900
+their link colors do not validate an RF prediction. All six are 1440 × 900
 lossless PNGs in the dark theme.
 
 The root README should open with one strong overview image and a short visual tour. A detailed gallery can show every mode and tool without making the project landing page slow or difficult to scan.
@@ -80,6 +80,8 @@ The six terrain draw styles can be presented as one labeled comparison rather th
 - [ ] `map/terrain-draw-styles.png` — Gray Scaled Slope, Colored Absolute, Colored Relative, X-Ray, X-Ray Inverted, and Rainbow
 
 ### Tools and dialogs
+
+- [x] `guides/coverage.png` — nonmodal Coverage workflow guide beside its owner
 
 - [ ] `tools/add-node.png`
 - [x] `tools/node-editor.png`

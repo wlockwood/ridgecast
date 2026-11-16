@@ -16,13 +16,15 @@ and keyboard shortcuts to navigate and edit your network efficiently.
 4. **Lasso-select**: Hold **Control** and drag a freehand polygon across the map
    to select all enclosed nodes and markers. Hold **Control+Shift** and drag to
    append to the existing selection.
-5. **Move a node**: Hold **Shift** and drag a node to reposition it. A live
-   hexagonal preview tracks the node as you drag; releasing the mouse button
-   commits the move and updates dependent links and coverage.
+5. **Move a node**: Hold **Shift** and drag a node to reposition it. When GPU
+   previews are available, approximate coverage can update while dragging.
+   Releasing the button commits the move and requests updated links and
+   selected-site coverage.
 6. **Edit site settings**: Double-click a node (or click an already-selected
    single node) to open the Node Editor dialog.
-7. **Inspect link profiles**: Select one node, then **Shift-click** another to
-   display a provisional path preview. Right-click any link or provisional path
+7. **Inspect link profiles**: Use **Control-click** to select two radio nodes;
+   a provisional path appears when no established link joins them.
+   Right-click any link or provisional path
    and choose **Show Link Profile** to open an interactive 2D elevation
    cross-section with Fresnel zones and clearance metrics.
 8. **Measure distances**: Right-click empty map space and choose **Start Ruler
@@ -43,10 +45,17 @@ and keyboard shortcuts to navigate and edit your network efficiently.
 | Center map on a site | Double-click the site's row in the **Network** list panel |
 
 The **Fit** menu in the top-left map toolbar provides quick framing options.
-Fitting active nodes includes all enabled, visible radio nodes (falling back to
-all nodes if none are active). Fitting evaluation range frames the calculated
-downlink footprint of selected sites, and fitting visible coverage frames only the
+Fitting active nodes includes enabled, visible nodes (falling back to
+all nodes if none are active). Fitting evaluation range frames the evaluation
+bounds of selected sites, or all eligible sites with no selection. Fitting visible coverage frames only the
 hexels or radial sectors currently visible above the fade-margin display thresholds.
+
+Adding a site through **Edit → Add Node at Coordinates…** selects and centers
+the new node. The zoom shows roughly 5 km along the map's shorter edge, expanding
+up to about 20 km to include the nearest enabled, visible node within 8 km.
+It adapts to the map size and latitude rather than the site's coverage range.
+**Bulk Add Nodes by Coordinates…** selects and fits all newly added positions
+with padding, retaining the same minimum context for small or colocated groups.
 
 ## Selection and multi-selection
 
@@ -92,8 +101,8 @@ clicking each one:
 
 When you hold **Shift** and drag a node:
 - Normal map panning is suspended.
-- As the cursor moves across the map, a live coverage preview indicates the
-  current hexagonal grid cell under evaluation.
+- When GPU previews are available, moving into a new coverage cell requests
+  an approximate coverage preview.
 - When you release the mouse button, the node is dropped at its new geographic
   coordinates. Connected links, path elevations, and coverage overlays
   recalculate automatically.
@@ -108,7 +117,7 @@ of affected sites. Deletions are fully recorded in the undo stack.
 | Action | Control |
 | --- | --- |
 | Select a link | Click the link line |
-| Provisional link preview | Select one node, then **Shift-click** another node |
+| Provisional link preview | Use **Control-click** to select two radio nodes without an established link |
 | Open 2D Link Profile | Right-click the link line and choose **Show Link Profile** |
 
 Selecting two nodes that do not share an established network link renders a
@@ -125,8 +134,7 @@ ground elevation along real-world traversal routes:
 
 1. **Start measuring**: Right-click empty map space and choose **Start Ruler Here**.
 2. **Add points**: Click anywhere on the map to place subsequent waypoints, or
-   right-click and choose **Add Ruler Point Here**. Double-clicking empty map
-   space also extends the ruler line.
+   right-click and choose **Add Ruler Point Here**. Use one click per waypoint.
 3. **Adjust waypoints**: Drag any round waypoint anchor to fine-tune its position.
 4. **Read distance**: The cumulative path distance is displayed beside the final
    waypoint in your configured display units (miles or kilometers).
@@ -177,8 +185,8 @@ Right-clicking elements in the main viewport provides targeted actions:
 The **Layers** button in the map header toggles the Layers drawer, which controls
 how geospatial data and coverage results appear:
 
-- **Basemap**: Select **Road** (OpenStreetMap), **Satellite**, or **Blank**
-  canvas.
+- **Basemap**: Select **None** (plain background), **Road** (OpenStreetMap),
+  **Topographic** (OpenTopoMap), or **Satellite / Aerial** (Esri World Imagery).
 - **Terrain overlay**: Enable hillshading, slope visualization, and elevation
   contours (with configurable contour intervals from 10 m to 500 m).
 - **Regional water**: Toggle detailed vector water bodies (lakes, rivers,
@@ -195,8 +203,7 @@ how geospatial data and coverage results appear:
 
 ## Tile Manager Mode
 
-When **Tile Manager Mode** is active (via **Tools → Tile Manager Mode** or the
-header button):
+When **Tile Manager Mode** is active (via **Tools → Tile Manager Mode**):
 - Pointer interactions are redirected to managing cached terrain, land cover,
   and surface raster tiles.
 - Node dragging and ordinary node selection are suspended so that clicking or

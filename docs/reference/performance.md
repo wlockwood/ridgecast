@@ -5,8 +5,10 @@ running independent jobs concurrently, and using GPU compute where the complete
 workload benefits. Full quality CPU propagation remains available independently
 of the faster approximation.
 
-Today, LiDAR preparation uses one or two build slots and selects GPU finishing
-only when matching saved calibration qualifies it. Full quality Site Finder uses
+LiDAR preparation shares a CPU pool sized to the available logical processors.
+Independent surface jobs and point-cloud blocks overlap within the configured
+RAM allowance; there is no fixed two-job or eight-tile ceiling. GPU finishing
+is selected only when matching saved calibration qualifies it. Full quality Site Finder uses
 CPU; Fast uses CPU plus the available GPUs with a matching approximate model.
 These are the current application choices; the experiments below also test
 configurations that production does not select.
@@ -18,9 +20,92 @@ run at a time. **Fast** is an approximate radio-loss calculation; Full quality
 uses the selected propagation model. Their mechanisms are explained below.
 
 This page describes the implemented optimizations and the development-computer
-measurements recorded on **2026-10-08**. The measurements use synthetic inputs;
+measurements recorded on **2026-10-08**, with map-layer measurements added on
+**2026-10-13** and a CPU-scaling smoke check added on **2026-11-13**. The measurements use synthetic inputs;
 they do not predict every survey or measure RF accuracy. Detailed benchmark
 reports linked below retain the tested scope, source identity and validation.
+
+## Link and coverage calculations
+
+All-pairs link calculations share an unordered path's terrain samples in bounded
+parallel chunks, then evaluate both radio directions independently. Categorical
+pixels and measured clutter retain their directional sampling at raster boundaries.
+Receiver-noise work
+and clutter-loss calculations also run on workers. Published links retain their
+source/destination order. Surface planning keeps its existing coarse-pruning and
+finer-clearance sample grids: a coarse rejection is not proof that the final
+full-resolution calculation would reject a link.
+
+Two-way coverage shares profile traversal and clutter preparation for TX and RX,
+while keeping directional propagation inputs and cache entries. Radial sweeps
+reuse a ray's canopy prefixes. Clutter sampling reuses overlapping half-intervals
+only when their sample coordinates match exactly, preserving raster boundary
+behavior. Coverage folds equal-resolution node grids directly and reuses receiver
+noise evaluations within a stable land-cover revision.
+
+These changes have numerical regression coverage. Their application-wide speedup
+has not been measured; terrain availability, raster layout and model choice
+still affect runtime.
+
+## Map-layer loading after panning and zooming
+
+Authored vector overlays are culled, simplified and tessellated on a cancellable
+worker. Unchanged views reuse the prepared meshes; changes to the camera, source
+geometry or styling invalidate that snapshot. Very dense views limit display to
+50,000 line segments and 1,000 point markers and show a zoom-in notice. These
+display limits do not change the project geometry or GIS exports.
+
+The Network navigator only formats visible rows. Node-editor aiming choices are
+sorted in the background and reused until the network changes. GIS export
+captures shared data before its worker builds the export snapshot, and opening
+an exported file performs filesystem checks outside the UI thread. Link-result
+delivery applies at most eight queued calculation messages per frame, with
+at most 128 links in each link-result message.
+
+Tile Manager refreshes its status and merged inventory on a worker at most twice
+per second. Automatic land-cover prefetch also plans its tile intersections on
+a worker, with one such prefetch batch active at a time.
+
+Terrain, land cover and cached LiDAR have independent CPU rendering pools. Each
+pool uses `(available logical processors - 1) / 3` workers, clamped to 1–16.
+On the tested 32-processor machine this gives ten workers per layer. Jobs remain
+bounded until their replies are accepted, and each layer accepts at most four
+texture uploads per frame. Basemap downloads keep their existing concurrency.
+
+Terrain rendering captures configuration and decoded local DEMs once per tile,
+avoiding shared configuration and raster-store locks for every sampled pixel.
+Source priority, NoData handling and vertical-offset arithmetic are preserved.
+Recent sampled tile colors survive panning and zooming within the existing
+16 MiB budget per layer; offscreen colors are evicted first. Returning to retained
+tiles recolors them without sampling again. Source/style changes still invalidate
+content, and viewport changes still cancel obsolete jobs. See [Map views](map-views.md).
+
+The **2026-10-13 release-build** probe used 36 adjacent zoom-15 tiles near
+47.37°N, 122.03°W, a synthetic decoded local DEM and land-cover data, and five
+warm trials per worker count. Medians on this computer were:
+
+| Scope | Original two-worker path | Updated ten-worker path |
+| --- | ---: | ---: |
+| CPU sampling, water mask, shading and recoloring of 36 tiles | 212.6 ms | 15.0 ms |
+| Headless viewport fill at 60 Hz, including admission and CPU texture creation | 306.3 ms | 153.0 ms |
+
+Capturing source data once reduced the two-worker CPU time to 61.7 ms. The
+updated renderer took 31.2 ms with four workers, 18.3 ms with eight, 12.0 ms with
+16, and 13.6 ms with 32. The default divides CPU capacity among the three
+overlays rather than assigning a full machine-sized pool to each one.
+
+The approximately 14× CPU improvement is not a desktop loading-speed claim:
+the headless viewport improved by approximately 2×. These probes exclude
+network downloads, disk decoding, native GPU upload/draw time and the live UI.
+Other terrain providers, raster sizes and simultaneous overlays can behave
+differently. The regression tests additionally verify recent-view reuse,
+bounded memory, cancellation, opacity changes and changed water geometry.
+
+Reproduce the manual probe with:
+
+```bash
+cargo test --release --lib map_render_worker_benchmark -- --ignored --nocapture
+```
 
 ## Measured differences
 
@@ -93,13 +178,14 @@ configuration at its worker allowance.
 
 That experimental recommendation compares against the best CPU-only queue count,
 including three queues. Production's automatic selection is narrower: CPU/GPU
-calibration must have matching execution slots, currently one or two. Even with
+calibration must have matching execution slots. These historical probes used
+one or two production slots. Even with
 two queues on both sides, the dense GPU combinations above were slower than
 CPU only (1.766 / 1.747 seconds versus 1.695 seconds).
 
-The three-queue result is an **experiment**, not a shipped three-slot setting.
-Production preparation currently admits one or two simultaneous builds according
-to memory and execution constraints. Some larger experimental combinations were
+The three-queue result is a historical **experiment**, not a prediction for the
+current scheduler. Production now sizes concurrency from CPU capacity and the
+configured RAM allowance. Some larger experimental combinations were
 unavailable because they exceeded the benchmark's scratch limit. See the
 [complete qualification report](mixed-device-qualification.md).
 
@@ -185,17 +271,52 @@ misses and large data preparation still cost time and run on workers.
 
 ### Stream and overlap LiDAR builds within a memory budget
 
-The native compiler decodes points in bounded chunks rather than retaining the
-entire point cloud. Independent surface builds can overlap in a one- or two-slot
-pipeline, allowing another build to make progress during serial work. Admission
-includes retained rasters, codec buffers, finishing scratch and output encoding;
-a large build can reduce concurrency to one slot.
+The native compiler streams bounded point batches and projects them on the
+shared CPU pool. Independent surface jobs, EPT tiles and COPC blocks can use the
+available workers together. Eligible multi-chunk LAZ files also use parallel
+decompression when its extra codec and point buffers fit; unsupported or
+oversized layouts retain a serial compatibility path.
 
-CPU worker pools are reused. Build slots and workers inside a build are separate
-resources: a 32-worker allowance does not mean 32 simultaneous decoders. This
-explains both the low aggregate CPU utilization and why increasing independent
-CPU queues helped the experiment. Widening production beyond two slots requires
-further memory and representative-survey qualification.
+Concurrency follows the configured decoded-memory allowance, rather than a
+fixed 2 GiB preparation ceiling. Automatic memory management sizes that allowance
+from detected RAM and available headroom; a manual setting is respected.
+Admission includes retained rasters, encoded points, codec buffers, finishing
+scratch and output encoding. A large job or a small allowance can still reduce
+concurrency to one slot.
+
+All CPU stages share the same worker pool. A worker allowance is a capacity,
+not a promise that every core stays busy: a short final batch, serial file I/O,
+ordered publication, provider waits and memory pressure can leave workers idle.
+Provider connection and rate limits remain independent of CPU workers. Changed
+execution semantics invalidate old LiDAR calibration; wider jobs need matching
+new evidence before GPU finishing or calibrated timing estimates are selected.
+
+The **2026-11-13 release-build smoke check** prepared 100 local corridor products
+at distinct grid spacings, using the same small source throughout. Each case
+rebuilt and published its outputs. One observation per configuration gave:
+
+| CPU workers | Maximum concurrent jobs observed | Elapsed time |
+| ---: | ---: | ---: |
+| 1 | 1 | 1.737 s |
+| 2 | 2 | 1.199 s |
+| 32 | 32 | 0.650 s |
+
+All configurations produced identical decoded surface payload hashes. A final
+reopen reused all 100 products without rebuilding. Automatic memory admission
+allowed approximately 18.7 GiB on this computer; this was a limit, not measured
+RAM consumption. The source was repeatedly reused and the OS file cache was not
+flushed. This single-run fixture check verifies wider dispatch and output
+equivalence; it does not qualify throughput for dense surveys, cold storage,
+network acquisition or the live desktop.
+
+Reproduce it with:
+
+```bash
+cargo test --release --lib real_lidar_hundred_request_preparation_reuses_after_restart -- --ignored --nocapture --test-threads=1
+```
+
+The report is written to
+`.feature-work/lidar-cpu-scaling-2026-11-13/hundred-request-preparation.json`.
 
 ### Accelerate LiDAR finishing without discarding evidence
 

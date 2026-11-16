@@ -107,7 +107,7 @@ Two things to know before you do it:
 | Basemaps | OpenStreetMap, OpenTopoMap, Esri World Imagery |
 | Elevation | USGS 3DEP (1/3 arcsecond, US), Copernicus GLO-30 (global), legacy Skadi/SRTM `.hgt` |
 | Land cover | MRLC / NLCD (United States) |
-| LiDAR | USGS 3DEP and NOAA Digital Coast public point clouds |
+| LiDAR | National and state point clouds and numerical clutter rasters in the [source catalog](reference/lidar-source-catalog.md), including USGS, NOAA and Microsoft Planetary Computer |
 | Population | WorldPop 2020 UN-adjusted constrained country rasters |
 | Amateur licenses | FCC ULS bulk amateur archive |
 | Geocoding | U.S. Census geocoder and postal-area data |
@@ -143,7 +143,7 @@ check.** The only outbound traffic is data fetches.
 | MRLC / NLCD land-cover host | land cover |
 | `worldpop.ridgecast.org` | population (first mirror) |
 | `data.source.coop` | population (WFP / Source Cooperative fallback) |
-| USGS 3DEP and NOAA Digital Coast LiDAR hosts | point clouds |
+| Selected LiDAR catalog's discovery and delivery hosts, including USGS, NOAA, Microsoft/Azure, NEON, OpenTopography and state programs | point clouds and numerical clutter rasters |
 | FCC ULS archive host | amateur licenses |
 | `geocoding.geo.census.gov` and Census postal-area hosts | geocoding |
 
@@ -182,6 +182,19 @@ resolution are different: resampling to 3 m does not create finer source detail.
 Several data types are fetched through an **ordered list of mirrors**. Each entry
 has a label, a URL template, and an enabled flag; RidgeCast tries the enabled
 entries in order and moves to the next when one fails.
+
+LiDAR has a source-specific mirror list under **Terrain & Geodata Settings →
+LiDAR delivery mirrors**. Independent objects are distributed across healthy
+equivalent backends. EPT tiles prefer less outstanding work and rotate ties;
+other assets keep a stable object affinity so concurrent callers still share a
+transfer. A source may expose EPT/COPC/LAS point clouds or compiled surface rasters. Each mirror
+must serve identical objects and formats from the selected dataset. Byte-range
+readers retain their successful endpoint and source validator. AWS bucket aliases
+share capacity; independent bandwidth requires independent equivalent mirrors.
+General templates accept `{url}` (the canonical URL) or `{path}` (the full
+object path); legacy USGS and NOAA retain their documented layouts. Read
+[LiDAR source configuration](reference/lidar-source-catalog.md) for discovery,
+ground pairing, source identity and cache behavior.
 
 Defaults ship for elevation:
 
@@ -374,7 +387,7 @@ population is deliberately exempt.
 | **Terrain** | elevation rasters (3DEP, GLO-30, legacy HGT) | 20 GB |
 | **Land cover** | NLCD rasters | 4 GB |
 | **LiDAR surfaces** | derived DSM/DTM products and resolved catalogs | 16 GB |
-| **Point clouds** | raw LiDAR tiles exactly as served | 16 GB |
+| **Point clouds** | raw LiDAR source payloads, cached range blocks and bounded immutable exports/archives | 16 GB |
 | **Coverage** | completed per-node coverage grids | 1 GB |
 | **Links** | completed network link results | 256 MB |
 | **Population** | WorldPop country rasters | **none — never evicted** |
@@ -403,6 +416,21 @@ Eviction is least-recently-used and runs in the background. Map tiles rank by
 write time rather than by use, because their content-addressed HTTP cache cannot
 be hooked on read; removing a cached tile body is safe regardless, since the
 reader treats an unreadable entry as a miss and re-downloads.
+
+### Local file inventory and LiDAR admission
+
+RidgeCast keeps a rebuildable SQLite file inventory in
+`.ridgecast-cache-index-v1.sqlite` beside the `lidar` directory. In-memory file
+sizes and shared reservations let LiDAR workers check available storage without
+walking the cache after each download. Successful publication, replacement,
+invalidation and maintenance deletion update the accounting. A failed or canceled
+write releases its reservation; files actively in use remain protected.
+
+The maintenance worker loads and reconciles the inventory and persists small
+updates in batches. A missing, corrupt or incompatible inventory is rebuilt from
+local files. The first capped download can wait for that initial inventory;
+later admission normally uses memory only. Periodic reconciliation detects manual
+file changes and other cache writers. Deleting the inventory does not delete data.
 
 ### How the defaults are applied — and when they are not
 
@@ -481,6 +509,21 @@ datasets.
 The Downloads window shows active work with per-file download rates (MB/s), total
 network utilisation, and expandable URIs with copy and open controls. It provides
 pause, cancel, retry, and the offline toggle.
+
+LiDAR tile readiness advances as individual tiles finish. Unavailable tiles are
+reported separately from ready tiles. The download row shows the latest worker
+activity, including connection, receiving, provider retry and local inventory or
+save work, plus how long it has received no bytes. A quiet network can therefore
+be distinguished from local processing. Readiness updates are throttled to keep
+the map responsive.
+
+EPT tile transfers share a limit of four active HTTP requests and two per provider
+group; the USGS S3 URL aliases share one group. A tile makes at most three attempts
+within a 45-second budget, with backoff for transient connection, HTTP 429 and
+server errors. Unhealthy endpoints temporarily cool down so later tiles can try
+another configured endpoint. A missing object, cancellation, offline refusal or
+resource limit is not retried as a transient server error. Different surveys keep
+their own identities; aliases do not establish independent copies of the data.
 
 Two things about it are more useful than they sound:
 

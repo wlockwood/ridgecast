@@ -5,19 +5,36 @@ underlying network.
 
 ## Link display
 
-| Mode | Meaning |
+Open **View → Links → Link View Settings…** for per-view settings and its
+**Guide** button. Expand a section, then press **Use this view**; **Using this
+view** marks the active choice. Settings last for the application session.
+
+| View | Meaning |
 | --- | --- |
-| **Fade Margin** | Colors links by the configured fade-margin quality bands. |
-| **Distance** | Colors links by path length. |
-| **Long and Strong (Fortuity)** | Emphasizes links that are both long and strong: distance normalized to 50 km multiplied by SNR normalized to 30 dB, with each factor clamped to 0–1. |
-| **Hidden** | Hides link lines without deleting links. |
+| **Fade Margin** | Colors predicted signal headroom above the receiver's effective noise floor, using quality bands or a smooth scale. |
+| **Distance** | Colors geographic path length; a high value means longer. |
+| **Long and Strong (Fortuity)** | Multiplies normalized distance by normalized fade margin. Defaults show 1–500 miles with at least 0 dB; full-credit references are 500 miles and 30 dB. |
+| **Connectivity Potential** | Compares cycle-safe recursive connection counts on both sides, using hop retention and a minimum-potential filter. It has no distance or per-view fade-margin controls. |
+| **Hidden** | Removes calculated map link lines while retaining nodes and results. Coverage image export's explicit Show links option uses Fade Margin settings. |
+
+The [Link View Settings reference](link-view-settings.md) describes every
+control, default, equation, and worked example, including fixed versus relative
+colors. Find the global **Visible Link Threshold** in **Settings → Fade Margin
+Settings**; its value is also shown at the top of Link View Settings. A section
+minimum of 0 dB with a global minimum of 8 dB still hides a 5 dB link.
+
+Links touching any selected node draw above unrelated links in both directions,
+with the existing wider stroke and their view color. Unrelated links dim. Exact
+picking ties favor the line drawn on top. Several selected nodes promote the
+union of their incident links.
 
 ## Node labels and colors
 
 | Control | Choices or effect |
 | --- | --- |
 | **View → Node Labels** | **Full Names**, **Short Names**, or **Icon Only** |
-| **View → Node Colors** | **Connectivity Health**, **Site Score (All Nodes)**, **Site Score (Visible Nodes)**, **Site Score (Population Weighted)**, or **Hop Distance from Selected Node** |
+| **View → Node Colors** | **Connectivity Health**, **Harmonic Connectivity**, **Site Score (All Nodes)**, **Site Score (Visible Nodes)**, **Site Score (Population Weighted)**, or **Hop Distance from Selected Node** |
+| **Harmonic Connectivity** | Recursive, cycle-safe two-way reach, with each reachable node contributing `1 / shortest hops`. Also available as a highest-first Network list sort; see [connectivity priorities](../concepts/connectivity-priorities.md). |
 | Best Unit / Unique Coverage | Uses coverage-owner colors while those coverage modes are active and disables conflicting icon-color choices. |
 | **View → Independent Paths for Two Selected Nodes** | With exactly two nodes selected, draws up to three routes between them that share no intermediate node. See [Independent paths](#independent-paths). |
 
@@ -117,14 +134,36 @@ replaced document are discarded.
   fade-margin thresholds. It requires calculated coverage.
 
 The map’s **Layers** drawer controls the basemap, terrain and land-cover blending,
-coverage presentation, cached DSM hillshade, vector layers, amateur-license
+coverage presentation, cached LiDAR hillshade, vector layers, amateur-license
 visibility, callsign labels, and license coloring (License Class, Site Finder
 Score, or Link Count; see [Use FCC amateur-license data](../how-to/use-fcc-amateur-data.md)).
 
 
-Terrain, land-cover and cached DSM opacity changes reuse recent tile colors
+Blend controls for terrain, land cover, coverage, cached LiDAR, and Site Finder
+default to **Multiply**. Explicitly saved blend choices are preserved; older
+settings or coverage workspaces with no blend choice use Multiply.
+
+Terrain, land-cover and cached LiDAR opacity changes reuse recent tile colors
 without sampling the source data again. Tiles briefly wait for the new opacity
 before appearing; normal and Multiply blending use the same opacity precision
 as before. Changing a source, shading mode or contour setting rebuilds the
 relevant tiles. Recently used colors are retained within a fixed memory budget,
 so returning to an evicted tile can require sampling again.
+
+These three overlays render independently on background CPU workers. Worker
+counts adapt to the available logical processors, with at least one and at most
+16 workers per layer. On a machine with 32 available logical processors, each
+layer gets ten workers. Completed jobs count toward the limit until the UI
+accepts them, and texture uploads are limited to four per layer per frame.
+
+As terrain or land-cover data arrives, terrain shading keeps its last rendered
+tiles visible until replacements are ready. Arrivals do not cancel active
+terrain rendering jobs; overlapping refresh requests are combined. Changing
+terrain settings or shading style still discards incompatible tiles immediately.
+
+Panning away or finishing a zoom change keeps recent sampled tile colors within
+the existing 16 MiB budget per layer. Returning to those tiles reuses the colors
+and applies the current opacity instead of sampling terrain again. Offscreen
+colors are evicted before visible colors when the budget fills. Source, style,
+contour, and water changes still invalidate affected content; hiding a layer
+releases its retained colors. Basemap download concurrency is unchanged.

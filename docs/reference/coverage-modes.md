@@ -90,8 +90,9 @@ and Radial Sweep angular step.
 TX and RX results differ when power, antenna gain, height, or receiver noise is
 asymmetric.
 
-Two-way mode evaluates exact TX and RX grids separately on the CPU and uses
-their distinct cache identities. It joins margins by serving site and cell
+Two-way mode shares terrain, land-cover and clutter preparation for TX and RX
+on the CPU, evaluates each directional budget, and retains distinct directional
+cache identities. It joins margins by serving site and cell
 before merging. A good downlink from site A plus a good uplink to site B does
 not create two-way service. Raw margins for both directions, failures, and
 missing-direction values remain available in retained artifacts and GeoJSON.

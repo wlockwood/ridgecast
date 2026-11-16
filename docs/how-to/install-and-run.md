@@ -50,7 +50,8 @@ beside the application. Manual portable installation remains available.
 
 - Rust 1.95 or newer
 - Git
-- A C++17-capable compiler for the bundled ITM implementation
+- A C++17-capable compiler for the bundled ITM and LERC implementations
+- LLVM/libclang for generating LERC bindings during a source build
 - A desktop graphics environment with WebGPU support
 
 Platform-specific requirements:
@@ -63,7 +64,7 @@ Platform-specific requirements:
 
   ```bash
   sudo apt-get update
-  sudo apt-get install -y build-essential pkg-config libxkbcommon-dev libgtk-3-dev
+  sudo apt-get install -y build-essential pkg-config libxkbcommon-dev libgtk-3-dev libclang-dev
   ```
 
 Other Linux distributions need equivalent C/C++ compiler, X11, xkbcommon, and
@@ -84,6 +85,15 @@ toolchain must use `pc-windows-msvc`, rather than `pc-windows-gnu`. In Visual
 Studio Installer, confirm **Desktop development with C++** includes the MSVC
 tools and a Windows SDK; see the official
 [MSVC prerequisites](https://rust-lang.github.io/rustup/installation/windows-msvc.html).
+
+The numerical LiDAR raster reader builds the vendored LERC decoder. Install
+LLVM/libclang before building from source. If its shared library is not found,
+set `LIBCLANG_PATH` to its library directory; a typical Windows location is
+`C:\Program Files\LLVM\bin`. Packaged application users do not need this build
+tool installed.
+
+The repository supplies `-DLERC_STATIC` for the bundled static library. If you
+set your own `CXXFLAGS`, include that define as well, especially with MSVC.
 
 ## Build and launch
 

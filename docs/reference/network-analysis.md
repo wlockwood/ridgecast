@@ -7,6 +7,11 @@ Results**, record their assumptions, and are marked stale when the network
 changes. Transmitter Height Impact uses its own comparison window and requires
 one enabled transmitter.
 
+Large analysis result tables and lists use pages of 100 rows. Paging does not
+change whole-result summaries or CSV output. The N-1 sweep prepares its severity
+ranking in the background; its CSV includes every row in failed-node order,
+independently of the displayed page.
+
 | Command | Result | Additional requirements |
 | --- | --- | --- |
 | **Backbone Connectivity** | Two-way, downlink-only, uplink-only, or disconnected state and hop distance from a hub | At least one Backbone Hub |

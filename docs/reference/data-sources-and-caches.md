@@ -11,7 +11,7 @@ sources require no API keys.
 | Elevation | USGS 3DEP, Copernicus GLO-30, legacy Skadi/SRTM HGT |
 | Land cover | MRLC/NLCD; registered ESA WorldCover crops |
 | Water outlines and candidate placement | Regional OpenFreeMap / OpenMapTiles water polygons from OpenStreetMap; cached land cover and bundled Natural Earth provide fallback |
-| LiDAR | USGS 3DEP and NOAA Digital Coast public point clouds |
+| LiDAR | Registered national and state point clouds and numerical clutter rasters in the [source catalog](lidar-source-catalog.md) |
 | Population | WorldPop 2020 UN-adjusted constrained rasters via the RidgeCast mirror and WFP / Source Cooperative |
 | Amateur licenses | FCC ULS bulk amateur archive |
 | Geocoding | U.S. Census geocoder and postal-area data |
@@ -181,6 +181,12 @@ These outlines do not change RF water weights, clutter classes, or elevation.
 
 Raw vector tiles and source metadata persist under `water_vector/` in the active
 cache root, sharing the **Map tiles** disk budget and clear action with basemaps.
+Expected cancellations are summarized by reason, including viewport changes,
+source refresh, Cancel All, cache clearing, and shutdown. They do not indicate a
+disk failure. Completed validated tiles remain reusable under their original
+source even if the view changes. Actual cache-write failures identify the tile,
+source, failing filesystem operation, payload or sidecar path, error kind, and
+OS code.
 Acquisition uses two workers and a queue of at most 64 tiles; the service's
 managed decoded geometry cache is limited to 64 MiB. Offline, pause and cancel
 controls apply. An area request can queue water asynchronously, but a running
@@ -224,7 +230,7 @@ sample's error. A successful test confirms that sample, not the entire dataset.
 
 ## Default locations
 
-Treat **Settings → Application Preferences** as authoritative because it shows a
+Treat **Settings → Terrain & Geodata Settings** as authoritative because it shows a
 custom or migrated cache root.
 
 | Platform | Large cache root | Configuration directory |
@@ -238,12 +244,40 @@ working directory; the cache can be rebuilt.
 
 ## Cache behavior
 
+Supported tiled terrain TIFFs decode native blocks on demand. Prepared circle,
+corridor and profile requests share those blocks and retain active data through
+leases; unpinned blocks can be evicted independently. Read errors remain retryable
+and separate from real NoData. See [Terrain blocks, circles and profiles](terrain-subtile-access.md)
+for request shapes, sampling, memory allowances and full-raster fallback behavior.
+
 - Terrain, land-cover, surface, FCC, geocoding, node-source, and coverage data
   have separate storage. Basemaps and regional water share **Map tiles**.
 - Configured budgets are applied per category, so one category does not evict
   another.
 - In-memory decoded terrain tile retention (used by propagation and coverage)
-  is configured under **Settings → Terrain & Geodata Settings → Memory & Disk Budgets → Decoded Tile Memory** (512 MB – 32 GB, default 4 GB per source).
+  is configured under **Settings → Terrain & Geodata Settings → Memory & Disk Budgets → Decoded Tile Memory**.
+  **Automatic** shares a retention allowance of up to 20% of physical RAM across
+  terrain sources, link-solving workers, and decoded prepared surfaces. Shared
+  allocations count once. A 64 GiB system can retain about 12.8 GiB when memory
+  is available; this is a retention allowance, not an upfront allocation.
+  The allowance also leaves a reserve of 10% of physical RAM (at least 512 MiB,
+  at most 4 GiB) available to the rest of the system. It adds existing decoded
+  residency back when calculating headroom, so filling the cache does not lower
+  its own allowance. Memory readings and idle trimming refresh every five seconds
+  on a background thread. Recently accessed terrain gets a 30-second eviction
+  grace period, and pinned calculations can keep allocations alive after eviction;
+  these working sets may exceed the allowance. This is not a hard process-memory
+  limit and does not cover temporary decoder buffers or every other application cache.
+  **Manual** retains the saved 512 MiB–32 GiB per-source setting (default 4 GiB).
+  Link workers honor that same allowance and share unchanged, validated GeoTIFF
+  allocations with the desktop cache while running; a tile becoming available
+  after the worker starts can also be reused without another decode. Switching
+  modes preserves the manual value. Older settings using the historical 2 GiB or 4 GiB defaults
+  select Automatic; other existing budgets stay Manual. System queries use
+  Windows physical-memory counters or Linux `MemAvailable` (including cgroup v2
+  limits). If a query fails or the platform is unsupported, Automatic uses a
+  conservative combined 512 MiB allowance. Settings displays the effective
+  allowance, unique retained allocations, physical RAM, and available RAM.
 - WorldPop rasters and uncategorized files are not automatically evicted.
 - Population cache loading requires `*_ppp_2020_UNadj_constrained.tif`; legacy
   unconstrained files are ignored. See [Acquire tiles and publish a mirror](../how-to/publish-a-worldpop-mirror.md)
@@ -252,6 +286,51 @@ working directory; the cache can be rebuilt.
   deleting their contents.
 - Changing the cache root redirects new work but does not migrate the old tree.
 - Concurrent use of one cache root by several installations is unsupported.
+
+### LiDAR cache reuse
+
+LiDAR has two persistent layers: downloaded point-cloud tiles under `lidar/tiles/`
+and derived raster crops under `lidar/surfaces/`. Raw tiles are shared across
+nodes and links for the same survey and tile key. A different crop, direction,
+or corridor layout can need another raster build while reusing those raw files.
+The tile planner checks the files themselves before scheduling missing data.
+
+Prepared crops are reused by exact request identity or when a compatible crop
+contains every requested polygon. New multi-part corridor crops record all their
+polygons, so a later request can reuse a later segment. Older crops retain exact
+reuse and spatial reuse of their recorded first polygon. Existing files are kept;
+there is no need to clear the cache. A complete prepared hit gets memory priority
+over overlapping fragments, which remain available to fill cells without usable
+samples. Overlap alone does not prove that a whole new corridor is covered.
+
+Enabling a node considers candidate links before their final propagation results
+are known. These candidates may extend beyond the links ultimately displayed.
+Node progress badges also include shared corridor work at the other endpoint.
+“Fetching LiDAR” reports dependency preparation; its tile-ready count is not an
+HTTP-transfer count, since another concurrent task may have supplied a file.
+
+### Coverage processing order
+
+Coverage schedules sites using their full preferred terrain footprints and
+possible enabled fallback tiles, including tiles already resident in memory.
+It prefers work requiring fewer additional decoded bytes, then shared tiles
+with upcoming sites. It admits up to four uncached sites at once, using the
+union of their estimated footprints against Automatic's combined terrain
+allowance or Manual's separate source allowances. NLCD preparation also respects
+its separate 32-tile cache capacity. Reservations last until each calculation
+finishes; completed coverage-cache hits do not reserve terrain.
+
+Only admitted terrain footprints are inspected and decoded from disk. Later
+groups revalidate dependencies because a previously loaded tile may have been
+evicted. Ready sites can calculate while another admitted site waits for data.
+Original node identities, result tie-breaking and validated coverage-cache
+surface snapshots are preserved regardless of processing order.
+
+This is a greedy scheduling heuristic using nominal tile sizes and conservative
+fallback estimates, not a globally optimal schedule or a hard memory limit.
+A site whose own footprint exceeds the allowance is admitted alone after the
+existing large-run confirmation. LiDAR planning and context admission retain
+their existing budgets, and terrain's eviction grace period still applies.
 
 ### Coverage results
 
@@ -289,6 +368,33 @@ can restore the same numeric links while skipping terrain/LiDAR planning,
 surface preparation, path sampling, and propagation. Receiver noise floors are
 sampled fresh before checking reuse. The status line says **Reused cached network
 links** on a hit. A complete result with no viable links is also reusable.
+
+When ITM measured-surface planning is disabled, a fresh network solve goes
+directly to preparing the terrain profiles needed for link evaluation. It skips
+the separate whole-network terrain pass used to plan measured surfaces; ordinary
+terrain propagation and configured land-cover clutter still apply.
+
+Before preparing network link corridors, default median ITM solves also screen
+candidate pairs against their combined smooth-Earth radio horizon. The screen
+uses both ground elevations and adds **50 m above each antenna's actual mounting
+height**, with standard 4/3-Earth refraction. A 200 ft (60.96 m) mast therefore
+uses 110.96 m above ground for screening. The actual propagation calculation
+continues to use the configured antenna height.
+
+This is an approximate performance filter for network solving. It follows the
+existing bidirectional free-space budget check and runs before corridor sampling
+or measured-surface planning. Endpoint elevations are read lazily once per run
+on the background worker. Missing or invalid elevations, uncertain surface-based
+mounting heights, or changed source configuration retain the pair. Surface-based
+mounts include known categorical canopy height; unprepared measured surfaces
+bypass the screen. Other propagation models, nondefault ITM environments, and
+frequencies outside ITM's 20 MHz–20 GHz range also bypass it. Individual link
+profiles remain available for inspecting paths beyond this approximate cutoff.
+
+Network profiles load already-cached land-cover tiles from disk as needed, even
+when those tiles have left the in-memory LRU. Each profile retains its sampled
+tiles until sampling finishes. This does not download missing land cover;
+unknown classes still prevent caching an incomplete solve.
 
 Reuse requires matching participating sites, radio settings, frequency, cutoff,
 propagation and clutter settings, calculation versions, and local source data.

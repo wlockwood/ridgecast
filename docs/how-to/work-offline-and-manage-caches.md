@@ -112,6 +112,14 @@ state is warm or unknown, rather than a claimed cold NVMe measurement. See
 
 ## Reduce cache usage
 
+For decoded terrain in RAM, open **Settings → Terrain & Geodata Settings →
+Memory & Disk Budgets → Decoded Tile Memory**. **Automatic** adjusts a combined
+terrain and prepared-surface allowance to physical RAM and current memory
+availability. **Manual** uses your saved per-source budget. The automatic readout
+includes link-worker caches and counts shared allocations once. Recently used
+terrain and working sets retained by calculations may temporarily exceed either
+allowance to avoid repeated decoding. This setting does not change disk limits.
+
 Use **Application Preferences** to inspect each cache category and set or remove
 its limit. **Compact** rewrites older uncompressed cached rasters without
 deleting them. WorldPop rasters and uncategorized files are not automatically

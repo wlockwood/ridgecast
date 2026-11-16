@@ -3,7 +3,7 @@
 ## Planning workspace
 
 **Network** on the left keeps the site list above selected-site details and
-directional viable links. Choose an explicit sort order, Ctrl-click to select
+directional viable links. Choose an explicit sort order (including Harmonic connectivity), Ctrl-click to select
 several sites, double-click a list row to center the map, or right-click a row
 for its actions. **Edit selected…** supports single-site and bulk editing.
 The list and details scroll separately.
@@ -26,7 +26,7 @@ independently from Network.
 
 Open **Layers** on the map for basemap, coverage appearance (blur, small-cluster
 filtering, patterns, blend, opacity), terrain, land cover, amateur locations,
-vector layers, and available cached DSM display. **Pin** reserves space beside
+vector layers, and available cached LiDAR display. **Pin** reserves space beside
 the map; **Unpin** floats the drawer; **Close** gives the space back. Visibility
 and pinning are remembered. A pinned drawer floats temporarily on smaller
 windows to preserve map space, then returns when the window is widened.
@@ -42,6 +42,11 @@ Use the map's **Fit** menu to fit nodes, evaluation range, or visible coverage;
 the same commands remain in **View**.
 
 ## Floating windows
+
+Workspace panels and substantial tools offer a **Guide** button for nonmodal
+workflow help. New tool guides are on demand, with independent saved auto-show
+preferences; closing the tool also closes its guide. See
+[Use the in-app guides](../how-to/use-companion-guides.md) for the full list.
 
 **Settings → Performance & Calibration…** and **Tools → Benchmark this computer…**
 open the [computer benchmark](../how-to/benchmark-this-computer.md). If calculations
@@ -70,7 +75,8 @@ own viewports.
 | Replace selection with all non-hidden nodes, including offscreen nodes | **Control+A** |
 | Replace selection with non-hidden nodes inside the map view | **Control+Shift+A** |
 | Delete selected nodes | **Delete** or **Edit → Delete Selected Nodes** |
-| Open a link profile | Select one node, then **Shift-click** another |
+| Preview an unlinked pair | **Control-click** to select two radio nodes without an established link |
+| Open a link profile | Right-click a link or provisional path → **Show Link Profile** |
 | Open a context menu | Right-click the map, a node, a link, or a Site Finder result |
 | Open advanced search | **Control+F** |
 | Undo the last network edit | **Control+Z** |
@@ -144,13 +150,22 @@ name searches use the local FCC amateur database; location-only searches use
 the internal cache and U.S. Census geocoder.
 
 The checked **Tile Manager Mode** command enters or leaves that mode. The map
-header also provides an exit. **Analysis → Recalculate** offers **All Links**,
+header also provides an exit. Selected tile details appear in pages of 25; use
+**Previous** and **Next** to navigate them. Selection and inventory preparation
+run in the background; deletion waits for the current selection to finish.
+The map prepares visible tile rectangles in the background and displays up to
+4,096 at once, with a zoom-in notice for denser views. Lasso, select-all, totals
+and deletion still apply to the full eligible inventory. Inventory and download
+states refresh in the background while the map remains available.
+**Analysis → Recalculate** offers **All Links**,
 **Coverage for All Active Radio Nodes**, and **All Links and Coverage**. These
 commands ignore selection; coverage includes enabled, non-hidden radio nodes.
 Running calculations disable these commands with an explanation.
 
 Settings groups distinguish scope. **Application Preferences** contains the
-application-wide propagation model, units, directories, and cache controls.
+application-wide propagation model and display units. **Terrain & Geodata
+Settings** contains the cache directory, terrain sources, LiDAR scopes and
+extraction controls, and memory and disk budgets.
 **Current Network** groups frequency, fade-margin thresholds, and ambient noise;
 these parameters are saved with the network and their edits can be undone.
 **Data Sources**, owner colors, and **Work Offline** configure the application.
@@ -196,8 +211,12 @@ a pair pasted into the Latitude field while Longitude is empty. The **Paste**
 button also accepts pairs. Use a comma, semicolon, slash, newline, or space
 between coordinates; a comma makes degrees/minutes/seconds pairs easier to read.
 
-Adding a node centers the map on it and zooms to show its coverage evaluation
-range, using the network's default range.
+Adding a node selects it and centers the map with nearby geographic context.
+The view shows roughly 5 km along its shorter edge, expanding up to about 20 km
+to include the nearest enabled, visible node within 8 km. Zoom accounts for the
+map's size and latitude, independently of the coverage evaluation range.
+Bulk entry selects the new nodes and fits their positions with padding; even
+colocated nodes retain the minimum geographic context.
 
 | Format | Example pair |
 | --- | --- |

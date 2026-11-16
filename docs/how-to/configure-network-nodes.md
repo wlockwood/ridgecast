@@ -4,7 +4,7 @@ Use this guide to configure radio equipment, antenna height and patterns, covera
 
 ## Overview
 
-In RidgeCast, each radio node represents a transmitter, repeater, gateway, or client terminal placed on the map. Nodes inherit their baseline radio parameters from a shared [Radio System Profile](../reference/nodes-and-systems.md#systems), but can specify site-specific overrides for antenna height, transmit power, receiver sensitivity, antenna gain, radiation patterns, or coverage limits without altering the shared system.
+In RidgeCast, radio nodes represent repeaters or user terminals; Marker nodes annotate locations without RF calculations. Nodes inherit their baseline radio parameters from a shared [Radio System Profile](../reference/nodes-and-systems.md#systems), but can specify site-specific overrides for antenna height, transmit power, receiver sensitivity, antenna gain, radiation patterns, or coverage limits without altering the shared system.
 
 You can edit nodes in two modes:
 - **Single Node Editor**: Opens when double-clicking a node on the map, right-clicking and choosing **Edit Node**, or selecting a single node and choosing **Edit selected…** in the Network panel. Edits write through live to the active mesh and coalesce into a single undoable step when the window closes.
@@ -20,7 +20,7 @@ Both editor windows include an integrated **Companion Guide** button that opens 
 | --- | --- | --- |
 | **Double-Click** | Double-click any node on the map | Opens Single Node Editor |
 | **Context Menu** | Right-click a node on the map → **Edit Node** | Opens Single Node Editor (or Bulk Editor if multiple selected) |
-| **Network Panel** | Select site(s) in right panel → Click **Edit selected…** | Opens Single or Bulk Node Editor |
+| **Network Panel** | Select site(s) in the left Network panel → Click **Edit selected…** | Opens Single or Bulk Node Editor |
 | **Menu Bar** | Choose **Edit → Node Editor Guide** or **Help → Node Editor Guide** | Opens editor for selection and displays Companion Guide |
 
 ---
@@ -34,9 +34,8 @@ Both editor windows include an integrated **Companion Guide** button that opens 
 - **Enabled**: When checked, the node participates in RF link budget calculations, best-path analysis, and coverage overlays. Uncheck to temporarily take the station offline without removing it from the network.
 - **Hidden**: Suppresses the node from the map viewport and coverage rendering. Hidden nodes remain in the network list.
 - **Node Role**:
-  - **Repeater**: Central relay station capable of linking to other repeaters, gateways, and user terminals.
+  - **Repeater**: Relay station capable of linking to other repeaters and user terminals.
   - **User**: Subscriber or client station. User nodes link only to Repeaters, never directly to other User nodes.
-  - **Gateway**: Ingress/egress bridge linking the radio network to external infrastructure.
   - **Marker**: Non-RF map annotation. Markers do not calculate links or evaluate coverage. Choose from several visual icons including **Pin**, **Tower**, **Vehicle**, **House**, **Flag**, or **Star**.
 
 ### 2. Coordinates and clipboard exchange
@@ -73,7 +72,7 @@ Nodes inherit radio parameters from their assigned **System Profile**:
 ### 6. Analysis and network health
 
 - **Backbone Hub**: Marks this station as a primary root or hub for connectivity analysis, routing trees, and reachability metrics.
-- **Risk Groups**: Comma-separated list of common failure domains (e.g., `Grid-A, Mount-Hood-Tower`). Nodes sharing a risk group are modeled as failing together during resilience and single-point-of-failure analyses.
+- **Risk Groups**: Comma-separated list of common failure domains (e.g., `Grid-A, Mount-Hood-Tower`). Shared-risk independent-route analysis uses these labels to avoid routes with common failure domains.
 
 ### 7. Coverage limits and concentric range circles
 

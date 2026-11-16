@@ -1,6 +1,6 @@
 # A visual tour of RidgeCast
 
-These desktop captures were refreshed on October 4, 2026, using the revamped
+These desktop captures were refreshed on November 2, 2026, using the current
 planning workspace and a synthetic six-site demonstration network. Site names,
 positions, and saved link values are illustrative; the colors do not validate
 a real RF design. The demonstration uses offline mode and a plain basemap,
@@ -32,6 +32,10 @@ while **Draft**, **Planning**, and
 estimate before calculating. The radius limits the evaluation extent; a site
 can override the default. **Calculation options** holds the finer controls;
 population and coverage results appear below the inputs.
+
+Selecting sites and changing coverage inputs requests calculation automatically;
+wait for progress to finish before interpreting results. **Guide** beside the
+Coverage heading explains the workflow without leaving the workspace.
 
 See [Plan your first network](tutorials/plan-your-first-network.md) to start a project, or
 [Generate and export coverage](how-to/generate-and-export-coverage.md) to
@@ -91,10 +95,25 @@ meaning of these settings.
 Open **Edit → Radio Systems Manager** to manage shared radio and antenna
 profiles. The manager lists profiles with transmit power, antenna gain, and
 antenna height. Expand a profile to edit its settings, or choose
-**Add New System** for another kind of station. Sites assigned to a profile
+**Add New System** for another kind of station. The four starter profiles are
+**Basic - Single-Story**, **Moderate - Second Story**, **Tower**, and
+**Pocket Node**. **Add Built-in System…** offers starter profiles to existing
+networks. Sites assigned to a profile
 inherit its defaults unless they override a value in the site editor.
 
-![Radio Systems Manager listing Basic, Moderate, and Tower radio profiles with their transmit power, antenna gain and antenna height, plus Add New System.](screenshots/tools/systems-manager.png)
+![Radio Systems Manager listing all four starter profiles, including Pocket Node, with their transmit power, antenna gain and antenna height, a Guide button, Add Built-in System and Add New System.](screenshots/tools/systems-manager.png)
 
 See [Nodes and systems](reference/nodes-and-systems.md) for profile
 inheritance and node overrides.
+
+## Help beside the tool
+
+Use **Guide** in Network, Coverage, Layers, or a substantial tool to open a
+nonmodal companion popup. New tool guides stay closed until requested and have
+independent optional auto-show preferences. Closing the tool also closes its
+guide. Small dialogs use tooltips and inline help.
+
+![Coverage companion guide beside the Coverage workbench, explaining site selection, test radio, direction, coverage questions and automatic calculation, with a scrollable body and saved auto-show control.](screenshots/guides/coverage.png)
+
+See [Use the in-app guides](how-to/use-companion-guides.md) for guide locations
+and how dismissal and saved preferences work.
